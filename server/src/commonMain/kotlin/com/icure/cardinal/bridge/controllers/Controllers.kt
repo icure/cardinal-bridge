@@ -3,7 +3,6 @@ package com.icure.cardinal.bridge.controllers
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
 import com.icure.cardinal.bridge.logic.BridgeLogic
 import com.icure.cardinal.bridge.model.UsernameTokenKey
-import com.icure.cardinal.sdk.CardinalSdk
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.request.receive
@@ -36,6 +35,10 @@ fun Application.configureRouting() {
 				call.respond(
 					bridgeLogic.getCurrentUser(),
 				)
+			}
+
+			get("/health") {
+				call.respond(HttpStatusCode.OK)
 			}
 		}
 	}
