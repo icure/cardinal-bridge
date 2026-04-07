@@ -7,13 +7,19 @@ import com.icure.cardinal.sdk.auth.UsernameLongToken
 import com.icure.cardinal.sdk.crypto.CryptoStrategies
 import com.icure.cardinal.sdk.crypto.KeyPairRecoverer
 import com.icure.cardinal.sdk.crypto.entities.RecoveryDataKey
+import com.icure.cardinal.sdk.crypto.impl.exportSpkiHex
 import com.icure.cardinal.sdk.model.DataOwnerWithType
 import com.icure.cardinal.sdk.model.Group
 import com.icure.cardinal.sdk.model.User
+import com.icure.cardinal.sdk.model.extensions.publicKeysWithSha256Spki
+import com.icure.cardinal.sdk.model.specializations.Base64String
 import com.icure.cardinal.sdk.options.AuthenticationMethod
 import com.icure.cardinal.sdk.options.SdkOptions
 import com.icure.cardinal.sdk.storage.impl.VolatileStorageFacade
+import com.icure.cardinal.sdk.utils.decode
 import com.icure.kryptom.crypto.CryptoService
+import com.icure.kryptom.crypto.RsaAlgorithm
+import com.icure.kryptom.crypto.asn.AsnToJwkConverter
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -31,64 +37,15 @@ class CardinalSdkInitializer private constructor(
 	private val applicationId: String?,
 	private val baseUrl: String,
 ) {
-
-	companion object {
-		private var instance: CardinalSdkInitializer? = null
-
-		operator fun invoke(applicationId: String?, baseUrl: String): CardinalSdkInitializer {
-			if (instance == null) {
-				instance = CardinalSdkInitializer(
-					applicationId = applicationId,
-					baseUrl = baseUrl,
-				)
-			}
-			return instance!!
-		}
-
-		operator fun invoke(): CardinalSdkInitializer = checkNotNull(instance) { "SDK wrapper has not been initialized" }
-
-		suspend fun updateBridgeToken(login: String, currentToken: String, newToken: String) =
-			CardinalSdkInitializer().updateBridgeToken(login, currentToken, newToken)
-
-		suspend fun getBridgeUser(): User = CardinalSdkInitializer().getBridgeUser()
-
-		suspend fun getGroupId(): String = CardinalSdkInitializer().getBridgeGroup().id
-
-	}
-
-	lateinit var sdk: CardinalSdk
-		private set
-
-	private var bridgeUser: User? = null
-
-	private var bridgeGroup: Group? = null
-
-	suspend fun getBridgeUser(): User =
-		if (bridgeUser == null) {
-			sdk.user.getCurrentUser().also {
-				bridgeUser = it
-			}
-		} else bridgeUser!!
-
-	suspend fun getBridgeGroup(): Group =
-		if (bridgeGroup == null) {
-			val groupId = checkNotNull(Companion.getBridgeUser().groupId) { "Bridge user has no group id" }
-			sdk.group.getGroup(groupId).also {
-				bridgeGroup = it
-			}
-		} else bridgeGroup!!
+	// TODO should we cache SDKs?
 
 	/**
-	 * Initializes a new instance of [CardinalSdk]. If an instance already exists, it will be overwritten.
-	 * The initialization needs a recovery key to recover the private key of the user, that will be stored in a volatile
-	 * facade.
-	 *
 	 * @param username the username of the user to log in.
 	 * @param token a long-lived token for the user.
-	 * @param recoveryKey a base32 encoded recovery key.
+	 * @param pkcs8Keys the base64 encoded key of the user (optional) and parents (mandatory) in pkcs8, by data owner id.
 	 */
-	suspend fun initialize(username: String, token: String, recoveryKey: String) {
-		sdk = CardinalSdk.initialize(
+	suspend fun initialize(username: String, token: String, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
+		CardinalSdk.initialize(
 			projectId = applicationId,
 			baseUrl = baseUrl,
 			authenticationMethod = AuthenticationMethod.UsingCredentials(
@@ -102,28 +59,24 @@ class CardinalSdkInitializer private constructor(
 						cryptoPrimitives: CryptoService,
 						keyPairRecoverer: KeyPairRecoverer
 					): Map<String, CryptoStrategies.RecoveredKeyData> {
-						val recoveryResult = recoveryKey.let {
-							keyPairRecoverer.recoverWithRecoveryKey(
-								RecoveryDataKey.fromBase32(it),
-								autoDelete = false
-							)
-						}.also {
-							if (!it.isSuccess) {
-								throw IllegalArgumentException("Invalid recovery key")
-							}
-						}.value
 						return keysData.associate { recoveryRequest ->
 							val dataOwner = recoveryRequest.dataOwnerDetails.dataOwner
+							val pubSpkiForSha256 = dataOwner.publicKeysWithSha256Spki
+							val keysOfDataOwnerByPubSpki = pkcs8Keys[dataOwner.id]?.associate { pkcs8Base64 ->
+								val pkcs8Bytes = pkcs8Base64.decode()
+								val asRsaSha1 = cryptoPrimitives.rsa.loadKeyPairPkcs8(RsaAlgorithm.RsaEncryptionAlgorithm.OaepWithSha1, pkcs8Bytes)
+								val spki = cryptoPrimitives.rsa.exportSpkiHex(asRsaSha1.public)
+								if (spki in pubSpkiForSha256) {
+									spki to cryptoPrimitives.rsa.loadKeyPairPkcs8(RsaAlgorithm.RsaEncryptionAlgorithm.OaepWithSha256, pkcs8Bytes)
+								} else {
+									spki to asRsaSha1
+								}
+							}.orEmpty()
 							dataOwner.id to CryptoStrategies.RecoveredKeyData(
-								recoveredKeys = recoveryResult.let {
-									recoveryRequest.unavailableKeys.associate { unavailableKeyInfo ->
-										val pub = unavailableKeyInfo.publicKey
-										recoveryResult[dataOwner.id]?.get(pub)?.let { recoveredKey ->
-											pub.fingerprintV1() to recoveredKey
-										} ?: throw IllegalStateException("Cannot recover private key for public key: ${unavailableKeyInfo.publicKey}")
-									}
+								recoveredKeys = keysOfDataOwnerByPubSpki.mapKeys {
+									it.key.fingerprintV1()
 								},
-								keyAuthenticity = emptyMap()
+								keyAuthenticity = keysOfDataOwnerByPubSpki.keys.associate { it.fingerprintV1() to true }
 							)
 						}
 					}
@@ -131,36 +84,11 @@ class CardinalSdkInitializer private constructor(
 					override suspend fun generateNewKeyForDataOwner(
 						self: DataOwnerWithType,
 						cryptoPrimitives: CryptoService
-					): CryptoStrategies.KeyGenerationRequestResult = CryptoStrategies.KeyGenerationRequestResult.Deny
-
+					): CryptoStrategies.KeyGenerationRequestResult = CryptoStrategies.KeyGenerationRequestResult.ParentDelegator
 				},
 				createTransferKeys = false,
+				useHierarchicalDataOwners = true,
+				lenientJson = true
 			)
 		)
-	}
-
-	@OptIn(ExperimentalTime::class)
-	suspend fun updateBridgeToken(login: String, currentToken: String, newToken: String): CreatedToken {
-		val sdk = CardinalBaseSdk.initialize(
-			projectId = applicationId,
-			baseUrl = baseUrl,
-			authenticationMethod = AuthenticationMethod.UsingCredentials(
-				UsernameLongToken(login, currentToken)
-			)
-		)
-		val currentUser = sdk.user.getCurrentUser()
-		val duration = 356.days
-		sdk.user.getToken(
-			userId = currentUser.id,
-			key = "bridgeToken",
-			tokenValidity = duration.inWholeSeconds,
-			token = newToken,
-		)
-		return CreatedToken(
-			token = newToken,
-			expirationTs = Clock.System.now().toEpochMilliseconds() + duration.inWholeMilliseconds
-		)
-	}
-
-	fun isSdkInitialized(): Boolean = ::sdk.isInitialized
 }

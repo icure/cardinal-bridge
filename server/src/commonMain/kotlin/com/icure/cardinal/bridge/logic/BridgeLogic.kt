@@ -6,10 +6,6 @@ import com.icure.cardinal.sdk.model.User
 
 class BridgeLogic {
 
-	val sdk: CardinalSdk
-		get() = CardinalSdkInitializer.Companion().sdk
-
-
-	suspend fun getCurrentUser(): User = sdk.user.getCurrentUser()
+	suspend fun getCurrentUser(): User = TODO()
 
 }

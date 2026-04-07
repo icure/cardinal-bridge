@@ -17,19 +17,6 @@ fun Application.configureRouting() {
 		val bridgeLogic = BridgeLogic()
 
 		route("/bridge") {
-			post("/auth") {
-				val credentials = call.receive<UsernameTokenKey>()
-				try {
-					CardinalSdkInitializer().initialize(
-						username = credentials.username,
-						token = credentials.token,
-						recoveryKey = credentials.recoveryKey,
-					)
-					call.respond(HttpStatusCode.OK)
-				} catch (_: IllegalStateException) {
-					call.respond(HttpStatusCode.Unauthorized)
-				}
-			}
 
 			get("/user/current") {
 				call.respond(
