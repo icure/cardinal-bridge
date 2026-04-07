@@ -7,7 +7,8 @@ group = "com.icure.bridge"
 version = "0.0.1"
 
 kotlin {
-	jvm()
+	macosArm64()
+	linuxX64()
 
 	sourceSets {
 		val commonMain by getting {

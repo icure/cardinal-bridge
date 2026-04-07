@@ -1,16 +1,11 @@
 package com.icure.cardinal.bridge.components
 
-import com.icure.cardinal.bridge.model.CreatedToken
-import com.icure.cardinal.sdk.CardinalBaseSdk
 import com.icure.cardinal.sdk.CardinalSdk
 import com.icure.cardinal.sdk.auth.UsernameLongToken
 import com.icure.cardinal.sdk.crypto.CryptoStrategies
 import com.icure.cardinal.sdk.crypto.KeyPairRecoverer
-import com.icure.cardinal.sdk.crypto.entities.RecoveryDataKey
 import com.icure.cardinal.sdk.crypto.impl.exportSpkiHex
 import com.icure.cardinal.sdk.model.DataOwnerWithType
-import com.icure.cardinal.sdk.model.Group
-import com.icure.cardinal.sdk.model.User
 import com.icure.cardinal.sdk.model.extensions.publicKeysWithSha256Spki
 import com.icure.cardinal.sdk.model.specializations.Base64String
 import com.icure.cardinal.sdk.options.AuthenticationMethod
@@ -19,16 +14,19 @@ import com.icure.cardinal.sdk.storage.impl.VolatileStorageFacade
 import com.icure.cardinal.sdk.utils.decode
 import com.icure.kryptom.crypto.CryptoService
 import com.icure.kryptom.crypto.RsaAlgorithm
-import com.icure.kryptom.crypto.asn.AsnToJwkConverter
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.days
-import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.concurrent.Volatile
 
 
 /**
  * This class allows to instantiate or renew an instance of [CardinalSdk] that can be used at the controller level.
- * It is implemented as a Singleton as [koin](https://insert-koin.io/docs/quickstart/ktor/) does not work for the
- * Windows target.
  *
  * @param applicationId the applicationId of the database.
  * @param baseUrl the Cardinal backend url to use (api or nightly).
@@ -37,6 +35,43 @@ class CardinalSdkInitializer(
 	private val applicationId: String?,
 	private val baseUrl: String,
 ) {
+	@Volatile
+	private var cache = emptyMap<Pair<String, String>, Deferred<CardinalSdk>>()
+	private val cacheMutex = Mutex()
+
+	/**
+	 * Get a cardinal sdk for [username] and [token].
+	 * If there is already an SDK with that [username] and [token] it is returned (independently of the keys), otherwise
+	 * a new one is created.
+	 * Failures are not cached.
+	 */
+	suspend fun getOrInit(username: String, token: String, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
+		coroutineScope {
+			val cacheKey = Pair(username, token)
+			var res: CardinalSdk? = null
+			while (res == null) {
+				val existing = cache[cacheKey]
+				if (existing != null) {
+					try {
+						res = existing.await()
+						continue
+					} catch (_: Exception) {
+						// else ignore, move on
+					}
+				}
+				ensureActive()
+				val jobCreatedByMe = cacheMutex.withLock {
+					if (existing === cache[cacheKey]) {
+						val job = async(start = CoroutineStart.LAZY) { initialize(username, token, pkcs8Keys) }
+						cache = cache + (cacheKey to job)
+						job
+					} else null
+				}
+				if (jobCreatedByMe != null) res = jobCreatedByMe.await()
+				// Someone else created the job wait for them
+			}
+			res
+		}
 
 
 	/**
@@ -44,7 +79,7 @@ class CardinalSdkInitializer(
 	 * @param token a long-lived token for the user.
 	 * @param pkcs8Keys the base64 encoded key of the user (optional) and parents (mandatory) in pkcs8, by data owner id.
 	 */
-	suspend fun initialize(username: String, token: String, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
+	private suspend fun initialize(username: String, token: String, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
 		CardinalSdk.initialize(
 			projectId = applicationId,
 			baseUrl = baseUrl,
