@@ -33,11 +33,11 @@ import kotlin.time.ExperimentalTime
  * @param applicationId the applicationId of the database.
  * @param baseUrl the Cardinal backend url to use (api or nightly).
  */
-class CardinalSdkInitializer private constructor(
+class CardinalSdkInitializer(
 	private val applicationId: String?,
 	private val baseUrl: String,
 ) {
-	// TODO should we cache SDKs?
+
 
 	/**
 	 * @param username the username of the user to log in.
