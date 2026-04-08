@@ -46,6 +46,10 @@ class CardinalSdkInitializer(
 	private var cache = emptyMap<Credentials, Deferred<CardinalSdk>>()
 	private val cacheMutex = Mutex()
 
+	init {
+		println("Connecting to url $baseUrl with application id ${if (applicationId != null) "\"$applicationId\"" else "<null>"}")
+	}
+
 	/**
 	 * Get a cardinal sdk for the given [credentials].
 	 * If there is already an SDK with those credentials it is returned, otherwise a new one is created.

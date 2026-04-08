@@ -1,8 +1,8 @@
 [versions]
 kotlin = "2.3.20"
 ktor = "3.4.1"
-logback = "1.5.32"
 cardinal = "2.3.0"
+clikt = "5.1.0"
 
 [libraries]
 ktor-serverCore = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
@@ -12,6 +12,8 @@ ktor-serverContentMegotiation = { module = "io.ktor:ktor-server-content-negotiat
 ktor-serializationJson = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref="ktor" }
 
 cardinal-sdk = { module = "com.icure:cardinal-sdk", version.ref = "cardinal" }
+
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

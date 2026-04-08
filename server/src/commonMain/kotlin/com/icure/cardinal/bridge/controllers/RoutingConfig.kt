@@ -1,7 +1,6 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
-import com.icure.cardinal.bridge.config.getEnvironmentVariable
 import com.icure.cardinal.bridge.logic.CalendarItemLogic
 import com.icure.cardinal.bridge.logic.ContactLogic
 import com.icure.cardinal.bridge.logic.DocumentLogic
@@ -23,13 +22,10 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 @OptIn(ExperimentalEncodingApi::class)
-fun Application.configureRouting() {
+fun Application.configureRouting(
+	sdkInitializer: CardinalSdkInitializer
+) {
 	routing {
-		val sdkInitializer = CardinalSdkInitializer(
-			getEnvironmentVariable("CARDINAL_APPLICATION_ID"),
-			getEnvironmentVariable("CARDINAL_BASE_URL") ?: "https://api.icure.cloud"
-		)
-
 		route("/bridge") {
 			patientRoutes(PatientLogic(sdkInitializer))
 			contactRoutes(ContactLogic(sdkInitializer))

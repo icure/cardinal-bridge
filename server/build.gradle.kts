@@ -8,7 +8,11 @@ version = "0.0.1"
 
 kotlin {
 	jvm()
-	macosArm64()
+	macosArm64 {
+		binaries.executable() {
+			entryPoint = "com.icure.cardinal.bridge.main"
+		}
+	}
 	linuxX64()
 
 	sourceSets {
@@ -18,6 +22,7 @@ kotlin {
 				implementation(libs.ktor.serverCio)
 				implementation(libs.ktor.serverContentMegotiation)
 				implementation(libs.ktor.serializationJson)
+				implementation(libs.clikt)
 				implementation(libs.cardinal.sdk)
 			}
 		}
