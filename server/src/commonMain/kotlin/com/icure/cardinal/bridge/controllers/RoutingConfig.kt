@@ -8,8 +8,6 @@ import com.icure.cardinal.bridge.logic.FormLogic
 import com.icure.cardinal.bridge.logic.HealthElementLogic
 import com.icure.cardinal.bridge.logic.MessageLogic
 import com.icure.cardinal.bridge.logic.PatientLogic
-import com.icure.cardinal.sdk.utils.RequestStatusException
-import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.response.respond
@@ -17,10 +15,8 @@ import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import kotlinx.serialization.json.JsonPrimitive
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalEncodingApi::class, ExperimentalUuidApi::class)
 fun Application.configureRouting(
@@ -39,18 +35,6 @@ fun Application.configureRouting(
 
 			get("/health") {
 				call.respond(HttpStatusCode.NoContent)
-			}
-
-			get("/illegalArgument") {
-				throw IllegalArgumentException("This is an illegal argument exception")
-			}
-
-			get("/requestStatus") {
-				throw RequestStatusException(HttpMethod.Delete, "https://fake.url/whatever", 402, "{ \"body\": \"what\" }")
-			}
-
-			get("/text") {
-				call.respond(HttpStatusCode.OK, JsonPrimitive(Uuid.random().toHexDashString()))
 			}
 		}
 	}
