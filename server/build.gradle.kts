@@ -21,6 +21,7 @@ kotlin {
 				implementation(libs.ktor.serverCore)
 				implementation(libs.ktor.serverCio)
 				implementation(libs.ktor.serverContentMegotiation)
+				implementation(libs.ktor.serverStatusPages)
 				implementation(libs.ktor.serializationJson)
 				implementation(libs.clikt)
 				implementation(libs.cardinal.sdk)

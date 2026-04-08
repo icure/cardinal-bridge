@@ -1,7 +1,6 @@
 package com.icure.cardinal.bridge.logic
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
-import com.icure.cardinal.bridge.model.Credentials
 import com.icure.cardinal.sdk.filters.BaseFilterOptions
 import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.CalendarItem
@@ -9,99 +8,97 @@ import com.icure.cardinal.sdk.model.DecryptedCalendarItem
 import com.icure.cardinal.bridge.model.CalendarItemWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 
-class CalendarItemLogic(private val sdkInitializer: CardinalSdkInitializer) {
-	private suspend fun sdk(credentials: Credentials) =
-		sdkInitializer.getOrInit(credentials)
+class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
 	// CRUD
 
-	suspend fun createCalendarItem(credentials: Credentials, entity: DecryptedCalendarItem): DecryptedCalendarItem =
-		sdk(credentials).calendarItem.createCalendarItem(entity)
+	suspend fun createCalendarItem(sessionId: String, entity: DecryptedCalendarItem): DecryptedCalendarItem =
+		sdk(sessionId).calendarItem.createCalendarItem(entity)
 
-	suspend fun createCalendarItems(credentials: Credentials, entities: List<DecryptedCalendarItem>): List<DecryptedCalendarItem> =
-		sdk(credentials).calendarItem.createCalendarItems(entities)
+	suspend fun createCalendarItems(sessionId: String, entities: List<DecryptedCalendarItem>): List<DecryptedCalendarItem> =
+		sdk(sessionId).calendarItem.createCalendarItems(entities)
 
-	suspend fun getCalendarItem(credentials: Credentials, entityId: String): DecryptedCalendarItem? =
-		sdk(credentials).calendarItem.getCalendarItem(entityId)
+	suspend fun getCalendarItem(sessionId: String, entityId: String): DecryptedCalendarItem? =
+		sdk(sessionId).calendarItem.getCalendarItem(entityId)
 
-	suspend fun getCalendarItems(credentials: Credentials, entityIds: List<String>): List<DecryptedCalendarItem> =
-		sdk(credentials).calendarItem.getCalendarItems(entityIds)
+	suspend fun getCalendarItems(sessionId: String, entityIds: List<String>): List<DecryptedCalendarItem> =
+		sdk(sessionId).calendarItem.getCalendarItems(entityIds)
 
-	suspend fun modifyCalendarItem(credentials: Credentials, entity: DecryptedCalendarItem): DecryptedCalendarItem =
-		sdk(credentials).calendarItem.modifyCalendarItem(entity)
+	suspend fun modifyCalendarItem(sessionId: String, entity: DecryptedCalendarItem): DecryptedCalendarItem =
+		sdk(sessionId).calendarItem.modifyCalendarItem(entity)
 
-	suspend fun modifyCalendarItems(credentials: Credentials, entities: List<DecryptedCalendarItem>): List<DecryptedCalendarItem> =
-		sdk(credentials).calendarItem.modifyCalendarItems(entities)
+	suspend fun modifyCalendarItems(sessionId: String, entities: List<DecryptedCalendarItem>): List<DecryptedCalendarItem> =
+		sdk(sessionId).calendarItem.modifyCalendarItems(entities)
 
-	suspend fun deleteCalendarItemById(credentials: Credentials, entityId: String, rev: String): StoredDocumentIdentifier =
-		sdk(credentials).calendarItem.deleteCalendarItemById(entityId, rev)
+	suspend fun deleteCalendarItemById(sessionId: String, entityId: String, rev: String): StoredDocumentIdentifier =
+		sdk(sessionId).calendarItem.deleteCalendarItemById(entityId, rev)
 
-	suspend fun deleteCalendarItemsByIds(credentials: Credentials, entityIds: List<StoredDocumentIdentifier>): List<StoredDocumentIdentifier> =
-		sdk(credentials).calendarItem.deleteCalendarItemsByIds(entityIds)
+	suspend fun deleteCalendarItemsByIds(sessionId: String, entityIds: List<StoredDocumentIdentifier>): List<StoredDocumentIdentifier> =
+		sdk(sessionId).calendarItem.deleteCalendarItemsByIds(entityIds)
 
-	suspend fun undeleteCalendarItemById(credentials: Credentials, id: String, rev: String): DecryptedCalendarItem =
-		sdk(credentials).calendarItem.undeleteCalendarItemById(id, rev)
+	suspend fun undeleteCalendarItemById(sessionId: String, id: String, rev: String): DecryptedCalendarItem =
+		sdk(sessionId).calendarItem.undeleteCalendarItemById(id, rev)
 
-	suspend fun purgeCalendarItemById(credentials: Credentials, id: String, rev: String) =
-		sdk(credentials).calendarItem.purgeCalendarItemById(id, rev)
+	suspend fun purgeCalendarItemById(sessionId: String, id: String, rev: String) =
+		sdk(sessionId).calendarItem.purgeCalendarItemById(id, rev)
 
 	// Filter/Match
 
-	suspend fun matchCalendarItemsBy(credentials: Credentials, filter: BaseFilterOptions<CalendarItem>): List<String> =
-		sdk(credentials).calendarItem.matchCalendarItemsBy(filter)
+	suspend fun matchCalendarItemsBy(sessionId: String, filter: BaseFilterOptions<CalendarItem>): List<String> =
+		sdk(sessionId).calendarItem.matchCalendarItemsBy(filter)
 
-	suspend fun matchCalendarItemsBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<CalendarItem>): List<String> =
-		sdk(credentials).calendarItem.matchCalendarItemsBySorted(filter)
+	suspend fun matchCalendarItemsBySorted(sessionId: String, filter: BaseSortableFilterOptions<CalendarItem>): List<String> =
+		sdk(sessionId).calendarItem.matchCalendarItemsBySorted(filter)
 
-	suspend fun filterCalendarItemsBy(credentials: Credentials, filter: BaseFilterOptions<CalendarItem>): List<DecryptedCalendarItem> {
-		val iterator = sdk(credentials).calendarItem.filterCalendarItemsBy(filter)
+	suspend fun filterCalendarItemsBy(sessionId: String, filter: BaseFilterOptions<CalendarItem>): List<DecryptedCalendarItem> {
+		val iterator = sdk(sessionId).calendarItem.filterCalendarItemsBy(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
-	suspend fun filterCalendarItemsBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<CalendarItem>): List<DecryptedCalendarItem> {
-		val iterator = sdk(credentials).calendarItem.filterCalendarItemsBySorted(filter)
+	suspend fun filterCalendarItemsBySorted(sessionId: String, filter: BaseSortableFilterOptions<CalendarItem>): List<DecryptedCalendarItem> {
+		val iterator = sdk(sessionId).calendarItem.filterCalendarItemsBySorted(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
 	// CalendarItem-specific
 
-	suspend fun bookCalendarItemCheckingAvailability(credentials: Credentials, entity: DecryptedCalendarItem): DecryptedCalendarItem =
-		sdk(credentials).calendarItem.bookCalendarItemCheckingAvailability(entity)
+	suspend fun bookCalendarItemCheckingAvailability(sessionId: String, entity: DecryptedCalendarItem): DecryptedCalendarItem =
+		sdk(sessionId).calendarItem.bookCalendarItemCheckingAvailability(entity)
 
 	// WithLinks
 
-	private suspend fun withLinks(credentials: Credentials, calendarItem: DecryptedCalendarItem): CalendarItemWithLinks {
-		val patientIds = sdk(credentials).calendarItem.decryptPatientIdOf(calendarItem).map { it.entityId }.toSet()
+	private suspend fun withLinks(sessionId: String, calendarItem: DecryptedCalendarItem): CalendarItemWithLinks {
+		val patientIds = sdk(sessionId).calendarItem.decryptPatientIdOf(calendarItem).map { it.entityId }.toSet()
 		return CalendarItemWithLinks(calendarItem, patientIds)
 	}
 
-	suspend fun createCalendarItemWithLinks(credentials: Credentials, entity: DecryptedCalendarItem): CalendarItemWithLinks =
-		withLinks(credentials, createCalendarItem(credentials, entity))
+	suspend fun createCalendarItemWithLinks(sessionId: String, entity: DecryptedCalendarItem): CalendarItemWithLinks =
+		withLinks(sessionId, createCalendarItem(sessionId, entity))
 
-	suspend fun createCalendarItemsWithLinks(credentials: Credentials, entities: List<DecryptedCalendarItem>): List<CalendarItemWithLinks> =
-		createCalendarItems(credentials, entities).map { withLinks(credentials, it) }
+	suspend fun createCalendarItemsWithLinks(sessionId: String, entities: List<DecryptedCalendarItem>): List<CalendarItemWithLinks> =
+		createCalendarItems(sessionId, entities).map { withLinks(sessionId, it) }
 
-	suspend fun getCalendarItemWithLinks(credentials: Credentials, entityId: String): CalendarItemWithLinks? =
-		getCalendarItem(credentials, entityId)?.let { withLinks(credentials, it) }
+	suspend fun getCalendarItemWithLinks(sessionId: String, entityId: String): CalendarItemWithLinks? =
+		getCalendarItem(sessionId, entityId)?.let { withLinks(sessionId, it) }
 
-	suspend fun getCalendarItemsWithLinks(credentials: Credentials, entityIds: List<String>): List<CalendarItemWithLinks> =
-		getCalendarItems(credentials, entityIds).map { withLinks(credentials, it) }
+	suspend fun getCalendarItemsWithLinks(sessionId: String, entityIds: List<String>): List<CalendarItemWithLinks> =
+		getCalendarItems(sessionId, entityIds).map { withLinks(sessionId, it) }
 
-	suspend fun modifyCalendarItemWithLinks(credentials: Credentials, entity: DecryptedCalendarItem): CalendarItemWithLinks =
-		withLinks(credentials, modifyCalendarItem(credentials, entity))
+	suspend fun modifyCalendarItemWithLinks(sessionId: String, entity: DecryptedCalendarItem): CalendarItemWithLinks =
+		withLinks(sessionId, modifyCalendarItem(sessionId, entity))
 
-	suspend fun modifyCalendarItemsWithLinks(credentials: Credentials, entities: List<DecryptedCalendarItem>): List<CalendarItemWithLinks> =
-		modifyCalendarItems(credentials, entities).map { withLinks(credentials, it) }
+	suspend fun modifyCalendarItemsWithLinks(sessionId: String, entities: List<DecryptedCalendarItem>): List<CalendarItemWithLinks> =
+		modifyCalendarItems(sessionId, entities).map { withLinks(sessionId, it) }
 
-	suspend fun undeleteCalendarItemByIdWithLinks(credentials: Credentials, id: String, rev: String): CalendarItemWithLinks =
-		withLinks(credentials, undeleteCalendarItemById(credentials, id, rev))
+	suspend fun undeleteCalendarItemByIdWithLinks(sessionId: String, id: String, rev: String): CalendarItemWithLinks =
+		withLinks(sessionId, undeleteCalendarItemById(sessionId, id, rev))
 
-	suspend fun filterCalendarItemsByWithLinks(credentials: Credentials, filter: BaseFilterOptions<CalendarItem>): List<CalendarItemWithLinks> =
-		filterCalendarItemsBy(credentials, filter).map { withLinks(credentials, it) }
+	suspend fun filterCalendarItemsByWithLinks(sessionId: String, filter: BaseFilterOptions<CalendarItem>): List<CalendarItemWithLinks> =
+		filterCalendarItemsBy(sessionId, filter).map { withLinks(sessionId, it) }
 
-	suspend fun filterCalendarItemsBySortedWithLinks(credentials: Credentials, filter: BaseSortableFilterOptions<CalendarItem>): List<CalendarItemWithLinks> =
-		filterCalendarItemsBySorted(credentials, filter).map { withLinks(credentials, it) }
+	suspend fun filterCalendarItemsBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<CalendarItem>): List<CalendarItemWithLinks> =
+		filterCalendarItemsBySorted(sessionId, filter).map { withLinks(sessionId, it) }
 
-	suspend fun bookCalendarItemCheckingAvailabilityWithLinks(credentials: Credentials, entity: DecryptedCalendarItem): CalendarItemWithLinks =
-		withLinks(credentials, bookCalendarItemCheckingAvailability(credentials, entity))
+	suspend fun bookCalendarItemCheckingAvailabilityWithLinks(sessionId: String, entity: DecryptedCalendarItem): CalendarItemWithLinks =
+		withLinks(sessionId, bookCalendarItemCheckingAvailability(sessionId, entity))
 }

@@ -20,16 +20,16 @@ fun Route.healthElementRoutes(logic: HealthElementLogic) {
 	route("/healthElement") {
 		// CRUD
 		post("/create") {
-			call.respond(logic.createHealthElement(credentials(), call.receive<DecryptedHealthElement>()))
+			call.respond(logic.createHealthElement(sessionId(), call.receive<DecryptedHealthElement>()))
 		}
 
 		post("/createMany") {
-			call.respond(logic.createHealthElements(credentials(), call.receive<List<DecryptedHealthElement>>()))
+			call.respond(logic.createHealthElements(sessionId(), call.receive<List<DecryptedHealthElement>>()))
 		}
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
-			val healthElement = logic.getHealthElement(credentials(), id)
+			val healthElement = logic.getHealthElement(sessionId(), id)
 			if (healthElement != null) {
 				call.respond(healthElement)
 			} else {
@@ -38,93 +38,93 @@ fun Route.healthElementRoutes(logic: HealthElementLogic) {
 		}
 
 		post("/getMany") {
-			call.respond(logic.getHealthElements(credentials(), call.receive<List<String>>()))
+			call.respond(logic.getHealthElements(sessionId(), call.receive<List<String>>()))
 		}
 
 		put("/modify") {
-			call.respond(logic.modifyHealthElement(credentials(), call.receive<DecryptedHealthElement>()))
+			call.respond(logic.modifyHealthElement(sessionId(), call.receive<DecryptedHealthElement>()))
 		}
 
 		put("/modifyMany") {
-			call.respond(logic.modifyHealthElements(credentials(), call.receive<List<DecryptedHealthElement>>()))
+			call.respond(logic.modifyHealthElements(sessionId(), call.receive<List<DecryptedHealthElement>>()))
 		}
 
 		delete("/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.deleteHealthElementById(credentials(), id, rev))
+			call.respond(logic.deleteHealthElementById(sessionId(), id, rev))
 		}
 
 		post("/deleteMany") {
-			call.respond(logic.deleteHealthElementsByIds(credentials(), call.receive<List<StoredDocumentIdentifier>>()))
+			call.respond(logic.deleteHealthElementsByIds(sessionId(), call.receive<List<StoredDocumentIdentifier>>()))
 		}
 
 		post("/undelete/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.undeleteHealthElementById(credentials(), id, rev))
+			call.respond(logic.undeleteHealthElementById(sessionId(), id, rev))
 		}
 
 		delete("/purge/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			logic.purgeHealthElementById(credentials(), id, rev)
+			logic.purgeHealthElementById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchHealthElementsBy(credentials(), call.receive<BaseFilterOptions<HealthElement>>()))
+			call.respond(logic.matchHealthElementsBy(sessionId(), call.receive<BaseFilterOptions<HealthElement>>()))
 		}
 
 		post("/matchBySorted") {
-			call.respond(logic.matchHealthElementsBySorted(credentials(), call.receive<BaseSortableFilterOptions<HealthElement>>()))
+			call.respond(logic.matchHealthElementsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<HealthElement>>()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterHealthElementsBy(credentials(), call.receive<BaseFilterOptions<HealthElement>>()))
+			call.respond(logic.filterHealthElementsBy(sessionId(), call.receive<BaseFilterOptions<HealthElement>>()))
 		}
 
 		post("/filterBySorted") {
-			call.respond(logic.filterHealthElementsBySorted(credentials(), call.receive<BaseSortableFilterOptions<HealthElement>>()))
+			call.respond(logic.filterHealthElementsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<HealthElement>>()))
 		}
 
 		// WithLinks variants
 		post("/create/withLinks") {
-			call.respond(logic.createHealthElementWithLinks(credentials(), call.receive<DecryptedHealthElement>()))
+			call.respond(logic.createHealthElementWithLinks(sessionId(), call.receive<DecryptedHealthElement>()))
 		}
 
 		post("/createMany/withLinks") {
-			call.respond(logic.createHealthElementsWithLinks(credentials(), call.receive<List<DecryptedHealthElement>>()))
+			call.respond(logic.createHealthElementsWithLinks(sessionId(), call.receive<List<DecryptedHealthElement>>()))
 		}
 
 		get("/{id}/withLinks") {
-			val result = logic.getHealthElementWithLinks(credentials(), call.parameters["id"]!!)
+			val result = logic.getHealthElementWithLinks(sessionId(), call.parameters["id"]!!)
 			if (result != null) call.respond(result) else call.respond(HttpStatusCode.NotFound)
 		}
 
 		post("/getMany/withLinks") {
-			call.respond(logic.getHealthElementsWithLinks(credentials(), call.receive<List<String>>()))
+			call.respond(logic.getHealthElementsWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
 		put("/modify/withLinks") {
-			call.respond(logic.modifyHealthElementWithLinks(credentials(), call.receive<DecryptedHealthElement>()))
+			call.respond(logic.modifyHealthElementWithLinks(sessionId(), call.receive<DecryptedHealthElement>()))
 		}
 
 		put("/modifyMany/withLinks") {
-			call.respond(logic.modifyHealthElementsWithLinks(credentials(), call.receive<List<DecryptedHealthElement>>()))
+			call.respond(logic.modifyHealthElementsWithLinks(sessionId(), call.receive<List<DecryptedHealthElement>>()))
 		}
 
 		post("/undelete/{id}/{rev}/withLinks") {
-			call.respond(logic.undeleteHealthElementByIdWithLinks(credentials(), call.parameters["id"]!!, call.parameters["rev"]!!))
+			call.respond(logic.undeleteHealthElementByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterHealthElementsByWithLinks(credentials(), call.receive<BaseFilterOptions<HealthElement>>()))
+			call.respond(logic.filterHealthElementsByWithLinks(sessionId(), call.receive<BaseFilterOptions<HealthElement>>()))
 		}
 
 		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterHealthElementsBySortedWithLinks(credentials(), call.receive<BaseSortableFilterOptions<HealthElement>>()))
+			call.respond(logic.filterHealthElementsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<HealthElement>>()))
 		}
 	}
 }

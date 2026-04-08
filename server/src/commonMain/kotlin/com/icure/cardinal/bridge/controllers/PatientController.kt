@@ -15,7 +15,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
-import com.icure.cardinal.bridge.model.PatientWithLinks
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -28,16 +27,16 @@ fun Route.patientRoutes(logic: PatientLogic) {
 	route("/patient") {
 		// CRUD
 		post("/create") {
-			call.respond(logic.createPatient(credentials(), call.receive<DecryptedPatient>()))
+			call.respond(logic.createPatient(sessionId(), call.receive<DecryptedPatient>()))
 		}
 
 		post("/createMany") {
-			call.respond(logic.createPatients(credentials(), call.receive<List<DecryptedPatient>>()))
+			call.respond(logic.createPatients(sessionId(), call.receive<List<DecryptedPatient>>()))
 		}
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
-			val patient = logic.getPatient(credentials(), id)
+			val patient = logic.getPatient(sessionId(), id)
 			if (patient != null) {
 				call.respond(patient)
 			} else {
@@ -46,115 +45,115 @@ fun Route.patientRoutes(logic: PatientLogic) {
 		}
 
 		post("/getMany") {
-			call.respond(logic.getPatients(credentials(), call.receive<List<String>>()))
+			call.respond(logic.getPatients(sessionId(), call.receive<List<String>>()))
 		}
 
 		put("/modify") {
-			call.respond(logic.modifyPatient(credentials(), call.receive<DecryptedPatient>()))
+			call.respond(logic.modifyPatient(sessionId(), call.receive<DecryptedPatient>()))
 		}
 
 		put("/modifyMany") {
-			call.respond(logic.modifyPatients(credentials(), call.receive<List<DecryptedPatient>>()))
+			call.respond(logic.modifyPatients(sessionId(), call.receive<List<DecryptedPatient>>()))
 		}
 
 		delete("/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.deletePatientById(credentials(), id, rev))
+			call.respond(logic.deletePatientById(sessionId(), id, rev))
 		}
 
 		post("/deleteMany") {
-			call.respond(logic.deletePatientsByIds(credentials(), call.receive<List<StoredDocumentIdentifier>>()))
+			call.respond(logic.deletePatientsByIds(sessionId(), call.receive<List<StoredDocumentIdentifier>>()))
 		}
 
 		post("/undelete/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.undeletePatientById(credentials(), id, rev))
+			call.respond(logic.undeletePatientById(sessionId(), id, rev))
 		}
 
 		delete("/purge/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			logic.purgePatientById(credentials(), id, rev)
+			logic.purgePatientById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchPatientsBy(credentials(), call.receive<BaseFilterOptions<Patient>>()))
+			call.respond(logic.matchPatientsBy(sessionId(), call.receive<BaseFilterOptions<Patient>>()))
 		}
 
 		post("/matchBySorted") {
-			call.respond(logic.matchPatientsBySorted(credentials(), call.receive<BaseSortableFilterOptions<Patient>>()))
+			call.respond(logic.matchPatientsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Patient>>()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterPatientsBy(credentials(), call.receive<BaseFilterOptions<Patient>>()))
+			call.respond(logic.filterPatientsBy(sessionId(), call.receive<BaseFilterOptions<Patient>>()))
 		}
 
 		post("/filterBySorted") {
-			call.respond(logic.filterPatientsBySorted(credentials(), call.receive<BaseSortableFilterOptions<Patient>>()))
+			call.respond(logic.filterPatientsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Patient>>()))
 		}
 
 		// Patient-specific
 		get("/resolve/{id}") {
 			val id = call.parameters["id"]!!
 			val maxMergeDepth = call.request.queryParameters["maxMergeDepth"]?.toIntOrNull()
-			call.respond(logic.getPatientResolvingMerges(credentials(), id, maxMergeDepth))
+			call.respond(logic.getPatientResolvingMerges(sessionId(), id, maxMergeDepth))
 		}
 
 		post("/merge") {
 			val request = call.receive<MergePatientsRequest>()
-			call.respond(logic.mergePatients(credentials(), request.from, request.mergedInto))
+			call.respond(logic.mergePatients(sessionId(), request.from, request.mergedInto))
 		}
 
 		// WithLinks variants
 		post("/create/withLinks") {
-			call.respond(logic.createPatientWithLinks(credentials(), call.receive<DecryptedPatient>()))
+			call.respond(logic.createPatientWithLinks(sessionId(), call.receive<DecryptedPatient>()))
 		}
 
 		post("/createMany/withLinks") {
-			call.respond(logic.createPatientsWithLinks(credentials(), call.receive<List<DecryptedPatient>>()))
+			call.respond(logic.createPatientsWithLinks(sessionId(), call.receive<List<DecryptedPatient>>()))
 		}
 
 		get("/{id}/withLinks") {
-			val result = logic.getPatientWithLinks(credentials(), call.parameters["id"]!!)
+			val result = logic.getPatientWithLinks(sessionId(), call.parameters["id"]!!)
 			if (result != null) call.respond(result) else call.respond(HttpStatusCode.NotFound)
 		}
 
 		post("/getMany/withLinks") {
-			call.respond(logic.getPatientsWithLinks(credentials(), call.receive<List<String>>()))
+			call.respond(logic.getPatientsWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
 		put("/modify/withLinks") {
-			call.respond(logic.modifyPatientWithLinks(credentials(), call.receive<DecryptedPatient>()))
+			call.respond(logic.modifyPatientWithLinks(sessionId(), call.receive<DecryptedPatient>()))
 		}
 
 		put("/modifyMany/withLinks") {
-			call.respond(logic.modifyPatientsWithLinks(credentials(), call.receive<List<DecryptedPatient>>()))
+			call.respond(logic.modifyPatientsWithLinks(sessionId(), call.receive<List<DecryptedPatient>>()))
 		}
 
 		post("/undelete/{id}/{rev}/withLinks") {
-			call.respond(logic.undeletePatientByIdWithLinks(credentials(), call.parameters["id"]!!, call.parameters["rev"]!!))
+			call.respond(logic.undeletePatientByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterPatientsByWithLinks(credentials(), call.receive<BaseFilterOptions<Patient>>()))
+			call.respond(logic.filterPatientsByWithLinks(sessionId(), call.receive<BaseFilterOptions<Patient>>()))
 		}
 
 		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterPatientsBySortedWithLinks(credentials(), call.receive<BaseSortableFilterOptions<Patient>>()))
+			call.respond(logic.filterPatientsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<Patient>>()))
 		}
 
 		get("/resolve/{id}/withLinks") {
 			val maxMergeDepth = call.request.queryParameters["maxMergeDepth"]?.toIntOrNull()
-			call.respond(logic.getPatientResolvingMergesWithLinks(credentials(), call.parameters["id"]!!, maxMergeDepth))
+			call.respond(logic.getPatientResolvingMergesWithLinks(sessionId(), call.parameters["id"]!!, maxMergeDepth))
 		}
 
 		post("/merge/withLinks") {
 			val request = call.receive<MergePatientsRequest>()
-			call.respond(logic.mergePatientsWithLinks(credentials(), request.from, request.mergedInto))
+			call.respond(logic.mergePatientsWithLinks(sessionId(), request.from, request.mergedInto))
 		}
 	}
 }

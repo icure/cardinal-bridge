@@ -1,7 +1,6 @@
 package com.icure.cardinal.bridge.logic
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
-import com.icure.cardinal.bridge.model.Credentials
 import com.icure.cardinal.sdk.filters.BaseFilterOptions
 import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.Contact
@@ -12,132 +11,130 @@ import com.icure.cardinal.sdk.model.embed.Service
 import com.icure.cardinal.bridge.model.ContactWithLinks
 import com.icure.cardinal.bridge.model.ServiceWithLinks
 
-class ContactLogic(private val sdkInitializer: CardinalSdkInitializer) {
-	private suspend fun sdk(credentials: Credentials) =
-		sdkInitializer.getOrInit(credentials)
+class ContactLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
 	// CRUD
 
-	suspend fun createContact(credentials: Credentials, contact: DecryptedContact): DecryptedContact =
-		sdk(credentials).contact.createContact(contact)
+	suspend fun createContact(sessionId: String, contact: DecryptedContact): DecryptedContact =
+		sdk(sessionId).contact.createContact(contact)
 
-	suspend fun createContacts(credentials: Credentials, contacts: List<DecryptedContact>): List<DecryptedContact> =
-		sdk(credentials).contact.createContacts(contacts)
+	suspend fun createContacts(sessionId: String, contacts: List<DecryptedContact>): List<DecryptedContact> =
+		sdk(sessionId).contact.createContacts(contacts)
 
-	suspend fun getContact(credentials: Credentials, entityId: String): DecryptedContact? =
-		sdk(credentials).contact.getContact(entityId)
+	suspend fun getContact(sessionId: String, entityId: String): DecryptedContact? =
+		sdk(sessionId).contact.getContact(entityId)
 
-	suspend fun getContacts(credentials: Credentials, entityIds: List<String>): List<DecryptedContact> =
-		sdk(credentials).contact.getContacts(entityIds)
+	suspend fun getContacts(sessionId: String, entityIds: List<String>): List<DecryptedContact> =
+		sdk(sessionId).contact.getContacts(entityIds)
 
-	suspend fun modifyContact(credentials: Credentials, entity: DecryptedContact): DecryptedContact =
-		sdk(credentials).contact.modifyContact(entity)
+	suspend fun modifyContact(sessionId: String, entity: DecryptedContact): DecryptedContact =
+		sdk(sessionId).contact.modifyContact(entity)
 
-	suspend fun modifyContacts(credentials: Credentials, entities: List<DecryptedContact>): List<DecryptedContact> =
-		sdk(credentials).contact.modifyContacts(entities)
+	suspend fun modifyContacts(sessionId: String, entities: List<DecryptedContact>): List<DecryptedContact> =
+		sdk(sessionId).contact.modifyContacts(entities)
 
-	suspend fun deleteContactById(credentials: Credentials, entityId: String, rev: String): StoredDocumentIdentifier =
-		sdk(credentials).contact.deleteContactById(entityId, rev)
+	suspend fun deleteContactById(sessionId: String, entityId: String, rev: String): StoredDocumentIdentifier =
+		sdk(sessionId).contact.deleteContactById(entityId, rev)
 
-	suspend fun deleteContactsByIds(credentials: Credentials, entityIds: List<StoredDocumentIdentifier>): List<StoredDocumentIdentifier> =
-		sdk(credentials).contact.deleteContactsByIds(entityIds)
+	suspend fun deleteContactsByIds(sessionId: String, entityIds: List<StoredDocumentIdentifier>): List<StoredDocumentIdentifier> =
+		sdk(sessionId).contact.deleteContactsByIds(entityIds)
 
-	suspend fun undeleteContactById(credentials: Credentials, id: String, rev: String): DecryptedContact =
-		sdk(credentials).contact.undeleteContactById(id, rev)
+	suspend fun undeleteContactById(sessionId: String, id: String, rev: String): DecryptedContact =
+		sdk(sessionId).contact.undeleteContactById(id, rev)
 
-	suspend fun purgeContactById(credentials: Credentials, id: String, rev: String) =
-		sdk(credentials).contact.purgeContactById(id, rev)
+	suspend fun purgeContactById(sessionId: String, id: String, rev: String) =
+		sdk(sessionId).contact.purgeContactById(id, rev)
 
 	// Filter/Match
 
-	suspend fun matchContactsBy(credentials: Credentials, filter: BaseFilterOptions<Contact>): List<String> =
-		sdk(credentials).contact.matchContactsBy(filter)
+	suspend fun matchContactsBy(sessionId: String, filter: BaseFilterOptions<Contact>): List<String> =
+		sdk(sessionId).contact.matchContactsBy(filter)
 
-	suspend fun matchContactsBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<Contact>): List<String> =
-		sdk(credentials).contact.matchContactsBySorted(filter)
+	suspend fun matchContactsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Contact>): List<String> =
+		sdk(sessionId).contact.matchContactsBySorted(filter)
 
-	suspend fun filterContactsBy(credentials: Credentials, filter: BaseFilterOptions<Contact>): List<DecryptedContact> {
-		val iterator = sdk(credentials).contact.filterContactsBy(filter)
+	suspend fun filterContactsBy(sessionId: String, filter: BaseFilterOptions<Contact>): List<DecryptedContact> {
+		val iterator = sdk(sessionId).contact.filterContactsBy(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
-	suspend fun filterContactsBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<Contact>): List<DecryptedContact> {
-		val iterator = sdk(credentials).contact.filterContactsBySorted(filter)
+	suspend fun filterContactsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Contact>): List<DecryptedContact> {
+		val iterator = sdk(sessionId).contact.filterContactsBySorted(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
 	// Service-specific
 
-	suspend fun getService(credentials: Credentials, serviceId: String): DecryptedService? =
-		sdk(credentials).contact.getService(serviceId)
+	suspend fun getService(sessionId: String, serviceId: String): DecryptedService? =
+		sdk(sessionId).contact.getService(serviceId)
 
-	suspend fun getServices(credentials: Credentials, serviceIds: List<String>): List<DecryptedService> =
-		sdk(credentials).contact.getServices(serviceIds)
+	suspend fun getServices(sessionId: String, serviceIds: List<String>): List<DecryptedService> =
+		sdk(sessionId).contact.getServices(serviceIds)
 
-	suspend fun matchServicesBy(credentials: Credentials, filter: BaseFilterOptions<Service>): List<String> =
-		sdk(credentials).contact.matchServicesBy(filter)
+	suspend fun matchServicesBy(sessionId: String, filter: BaseFilterOptions<Service>): List<String> =
+		sdk(sessionId).contact.matchServicesBy(filter)
 
-	suspend fun matchServicesBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<Service>): List<String> =
-		sdk(credentials).contact.matchServicesBySorted(filter)
+	suspend fun matchServicesBySorted(sessionId: String, filter: BaseSortableFilterOptions<Service>): List<String> =
+		sdk(sessionId).contact.matchServicesBySorted(filter)
 
-	suspend fun filterServicesBy(credentials: Credentials, filter: BaseFilterOptions<Service>): List<DecryptedService> {
-		val iterator = sdk(credentials).contact.filterServicesBy(filter)
+	suspend fun filterServicesBy(sessionId: String, filter: BaseFilterOptions<Service>): List<DecryptedService> {
+		val iterator = sdk(sessionId).contact.filterServicesBy(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
-	suspend fun filterServicesBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<Service>): List<DecryptedService> {
-		val iterator = sdk(credentials).contact.filterServicesBySorted(filter)
+	suspend fun filterServicesBySorted(sessionId: String, filter: BaseSortableFilterOptions<Service>): List<DecryptedService> {
+		val iterator = sdk(sessionId).contact.filterServicesBySorted(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
 	// WithLinks
 
-	private suspend fun withLinks(credentials: Credentials, contact: DecryptedContact): ContactWithLinks {
-		val patientIds = sdk(credentials).contact.decryptPatientIdOf(contact).map { it.entityId }.toSet()
+	private suspend fun withLinks(sessionId: String, contact: DecryptedContact): ContactWithLinks {
+		val patientIds = sdk(sessionId).contact.decryptPatientIdOf(contact).map { it.entityId }.toSet()
 		return ContactWithLinks(contact, patientIds)
 	}
 
-	private suspend fun serviceWithLinks(credentials: Credentials, service: DecryptedService): ServiceWithLinks {
-		val patientIds = sdk(credentials).contact.decryptPatientIdOfService(service).map { it.entityId }.toSet()
+	private suspend fun serviceWithLinks(sessionId: String, service: DecryptedService): ServiceWithLinks {
+		val patientIds = sdk(sessionId).contact.decryptPatientIdOfService(service).map { it.entityId }.toSet()
 		return ServiceWithLinks(service, patientIds)
 	}
 
-	suspend fun createContactWithLinks(credentials: Credentials, contact: DecryptedContact): ContactWithLinks =
-		withLinks(credentials, createContact(credentials, contact))
+	suspend fun createContactWithLinks(sessionId: String, contact: DecryptedContact): ContactWithLinks =
+		withLinks(sessionId, createContact(sessionId, contact))
 
-	suspend fun createContactsWithLinks(credentials: Credentials, contacts: List<DecryptedContact>): List<ContactWithLinks> =
-		createContacts(credentials, contacts).map { withLinks(credentials, it) }
+	suspend fun createContactsWithLinks(sessionId: String, contacts: List<DecryptedContact>): List<ContactWithLinks> =
+		createContacts(sessionId, contacts).map { withLinks(sessionId, it) }
 
-	suspend fun getContactWithLinks(credentials: Credentials, entityId: String): ContactWithLinks? =
-		getContact(credentials, entityId)?.let { withLinks(credentials, it) }
+	suspend fun getContactWithLinks(sessionId: String, entityId: String): ContactWithLinks? =
+		getContact(sessionId, entityId)?.let { withLinks(sessionId, it) }
 
-	suspend fun getContactsWithLinks(credentials: Credentials, entityIds: List<String>): List<ContactWithLinks> =
-		getContacts(credentials, entityIds).map { withLinks(credentials, it) }
+	suspend fun getContactsWithLinks(sessionId: String, entityIds: List<String>): List<ContactWithLinks> =
+		getContacts(sessionId, entityIds).map { withLinks(sessionId, it) }
 
-	suspend fun modifyContactWithLinks(credentials: Credentials, entity: DecryptedContact): ContactWithLinks =
-		withLinks(credentials, modifyContact(credentials, entity))
+	suspend fun modifyContactWithLinks(sessionId: String, entity: DecryptedContact): ContactWithLinks =
+		withLinks(sessionId, modifyContact(sessionId, entity))
 
-	suspend fun modifyContactsWithLinks(credentials: Credentials, entities: List<DecryptedContact>): List<ContactWithLinks> =
-		modifyContacts(credentials, entities).map { withLinks(credentials, it) }
+	suspend fun modifyContactsWithLinks(sessionId: String, entities: List<DecryptedContact>): List<ContactWithLinks> =
+		modifyContacts(sessionId, entities).map { withLinks(sessionId, it) }
 
-	suspend fun undeleteContactByIdWithLinks(credentials: Credentials, id: String, rev: String): ContactWithLinks =
-		withLinks(credentials, undeleteContactById(credentials, id, rev))
+	suspend fun undeleteContactByIdWithLinks(sessionId: String, id: String, rev: String): ContactWithLinks =
+		withLinks(sessionId, undeleteContactById(sessionId, id, rev))
 
-	suspend fun filterContactsByWithLinks(credentials: Credentials, filter: BaseFilterOptions<Contact>): List<ContactWithLinks> =
-		filterContactsBy(credentials, filter).map { withLinks(credentials, it) }
+	suspend fun filterContactsByWithLinks(sessionId: String, filter: BaseFilterOptions<Contact>): List<ContactWithLinks> =
+		filterContactsBy(sessionId, filter).map { withLinks(sessionId, it) }
 
-	suspend fun filterContactsBySortedWithLinks(credentials: Credentials, filter: BaseSortableFilterOptions<Contact>): List<ContactWithLinks> =
-		filterContactsBySorted(credentials, filter).map { withLinks(credentials, it) }
+	suspend fun filterContactsBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<Contact>): List<ContactWithLinks> =
+		filterContactsBySorted(sessionId, filter).map { withLinks(sessionId, it) }
 
-	suspend fun getServiceWithLinks(credentials: Credentials, serviceId: String): ServiceWithLinks? =
-		getService(credentials, serviceId)?.let { serviceWithLinks(credentials, it) }
+	suspend fun getServiceWithLinks(sessionId: String, serviceId: String): ServiceWithLinks? =
+		getService(sessionId, serviceId)?.let { serviceWithLinks(sessionId, it) }
 
-	suspend fun getServicesWithLinks(credentials: Credentials, serviceIds: List<String>): List<ServiceWithLinks> =
-		getServices(credentials, serviceIds).map { serviceWithLinks(credentials, it) }
+	suspend fun getServicesWithLinks(sessionId: String, serviceIds: List<String>): List<ServiceWithLinks> =
+		getServices(sessionId, serviceIds).map { serviceWithLinks(sessionId, it) }
 
-	suspend fun filterServicesByWithLinks(credentials: Credentials, filter: BaseFilterOptions<Service>): List<ServiceWithLinks> =
-		filterServicesBy(credentials, filter).map { serviceWithLinks(credentials, it) }
+	suspend fun filterServicesByWithLinks(sessionId: String, filter: BaseFilterOptions<Service>): List<ServiceWithLinks> =
+		filterServicesBy(sessionId, filter).map { serviceWithLinks(sessionId, it) }
 
-	suspend fun filterServicesBySortedWithLinks(credentials: Credentials, filter: BaseSortableFilterOptions<Service>): List<ServiceWithLinks> =
-		filterServicesBySorted(credentials, filter).map { serviceWithLinks(credentials, it) }
+	suspend fun filterServicesBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<Service>): List<ServiceWithLinks> =
+		filterServicesBySorted(sessionId, filter).map { serviceWithLinks(sessionId, it) }
 }

@@ -20,16 +20,16 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 	route("/calendarItem") {
 		// CRUD
 		post("/create") {
-			call.respond(logic.createCalendarItem(credentials(), call.receive<DecryptedCalendarItem>()))
+			call.respond(logic.createCalendarItem(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
 
 		post("/createMany") {
-			call.respond(logic.createCalendarItems(credentials(), call.receive<List<DecryptedCalendarItem>>()))
+			call.respond(logic.createCalendarItems(sessionId(), call.receive<List<DecryptedCalendarItem>>()))
 		}
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
-			val calendarItem = logic.getCalendarItem(credentials(), id)
+			val calendarItem = logic.getCalendarItem(sessionId(), id)
 			if (calendarItem != null) {
 				call.respond(calendarItem)
 			} else {
@@ -38,102 +38,102 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 		}
 
 		post("/getMany") {
-			call.respond(logic.getCalendarItems(credentials(), call.receive<List<String>>()))
+			call.respond(logic.getCalendarItems(sessionId(), call.receive<List<String>>()))
 		}
 
 		put("/modify") {
-			call.respond(logic.modifyCalendarItem(credentials(), call.receive<DecryptedCalendarItem>()))
+			call.respond(logic.modifyCalendarItem(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
 
 		put("/modifyMany") {
-			call.respond(logic.modifyCalendarItems(credentials(), call.receive<List<DecryptedCalendarItem>>()))
+			call.respond(logic.modifyCalendarItems(sessionId(), call.receive<List<DecryptedCalendarItem>>()))
 		}
 
 		delete("/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.deleteCalendarItemById(credentials(), id, rev))
+			call.respond(logic.deleteCalendarItemById(sessionId(), id, rev))
 		}
 
 		post("/deleteMany") {
-			call.respond(logic.deleteCalendarItemsByIds(credentials(), call.receive<List<StoredDocumentIdentifier>>()))
+			call.respond(logic.deleteCalendarItemsByIds(sessionId(), call.receive<List<StoredDocumentIdentifier>>()))
 		}
 
 		post("/undelete/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.undeleteCalendarItemById(credentials(), id, rev))
+			call.respond(logic.undeleteCalendarItemById(sessionId(), id, rev))
 		}
 
 		delete("/purge/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			logic.purgeCalendarItemById(credentials(), id, rev)
+			logic.purgeCalendarItemById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchCalendarItemsBy(credentials(), call.receive<BaseFilterOptions<CalendarItem>>()))
+			call.respond(logic.matchCalendarItemsBy(sessionId(), call.receive<BaseFilterOptions<CalendarItem>>()))
 		}
 
 		post("/matchBySorted") {
-			call.respond(logic.matchCalendarItemsBySorted(credentials(), call.receive<BaseSortableFilterOptions<CalendarItem>>()))
+			call.respond(logic.matchCalendarItemsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<CalendarItem>>()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterCalendarItemsBy(credentials(), call.receive<BaseFilterOptions<CalendarItem>>()))
+			call.respond(logic.filterCalendarItemsBy(sessionId(), call.receive<BaseFilterOptions<CalendarItem>>()))
 		}
 
 		post("/filterBySorted") {
-			call.respond(logic.filterCalendarItemsBySorted(credentials(), call.receive<BaseSortableFilterOptions<CalendarItem>>()))
+			call.respond(logic.filterCalendarItemsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<CalendarItem>>()))
 		}
 
 		// CalendarItem-specific
 		post("/book") {
-			call.respond(logic.bookCalendarItemCheckingAvailability(credentials(), call.receive<DecryptedCalendarItem>()))
+			call.respond(logic.bookCalendarItemCheckingAvailability(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
 
 		// WithLinks variants
 		post("/create/withLinks") {
-			call.respond(logic.createCalendarItemWithLinks(credentials(), call.receive<DecryptedCalendarItem>()))
+			call.respond(logic.createCalendarItemWithLinks(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
 
 		post("/createMany/withLinks") {
-			call.respond(logic.createCalendarItemsWithLinks(credentials(), call.receive<List<DecryptedCalendarItem>>()))
+			call.respond(logic.createCalendarItemsWithLinks(sessionId(), call.receive<List<DecryptedCalendarItem>>()))
 		}
 
 		get("/{id}/withLinks") {
-			val result = logic.getCalendarItemWithLinks(credentials(), call.parameters["id"]!!)
+			val result = logic.getCalendarItemWithLinks(sessionId(), call.parameters["id"]!!)
 			if (result != null) call.respond(result) else call.respond(HttpStatusCode.NotFound)
 		}
 
 		post("/getMany/withLinks") {
-			call.respond(logic.getCalendarItemsWithLinks(credentials(), call.receive<List<String>>()))
+			call.respond(logic.getCalendarItemsWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
 		put("/modify/withLinks") {
-			call.respond(logic.modifyCalendarItemWithLinks(credentials(), call.receive<DecryptedCalendarItem>()))
+			call.respond(logic.modifyCalendarItemWithLinks(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
 
 		put("/modifyMany/withLinks") {
-			call.respond(logic.modifyCalendarItemsWithLinks(credentials(), call.receive<List<DecryptedCalendarItem>>()))
+			call.respond(logic.modifyCalendarItemsWithLinks(sessionId(), call.receive<List<DecryptedCalendarItem>>()))
 		}
 
 		post("/undelete/{id}/{rev}/withLinks") {
-			call.respond(logic.undeleteCalendarItemByIdWithLinks(credentials(), call.parameters["id"]!!, call.parameters["rev"]!!))
+			call.respond(logic.undeleteCalendarItemByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterCalendarItemsByWithLinks(credentials(), call.receive<BaseFilterOptions<CalendarItem>>()))
+			call.respond(logic.filterCalendarItemsByWithLinks(sessionId(), call.receive<BaseFilterOptions<CalendarItem>>()))
 		}
 
 		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterCalendarItemsBySortedWithLinks(credentials(), call.receive<BaseSortableFilterOptions<CalendarItem>>()))
+			call.respond(logic.filterCalendarItemsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<CalendarItem>>()))
 		}
 
 		post("/book/withLinks") {
-			call.respond(logic.bookCalendarItemCheckingAvailabilityWithLinks(credentials(), call.receive<DecryptedCalendarItem>()))
+			call.respond(logic.bookCalendarItemCheckingAvailabilityWithLinks(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
 	}
 }

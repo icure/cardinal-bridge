@@ -21,16 +21,16 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 	route("/document") {
 		// CRUD
 		post("/create") {
-			call.respond(logic.createDocument(credentials(), call.receive<DecryptedDocument>()))
+			call.respond(logic.createDocument(sessionId(), call.receive<DecryptedDocument>()))
 		}
 
 		post("/createMany") {
-			call.respond(logic.createDocuments(credentials(), call.receive<List<DecryptedDocument>>()))
+			call.respond(logic.createDocuments(sessionId(), call.receive<List<DecryptedDocument>>()))
 		}
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
-			val document = logic.getDocument(credentials(), id)
+			val document = logic.getDocument(sessionId(), id)
 			if (document != null) {
 				call.respond(document)
 			} else {
@@ -39,61 +39,61 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 		}
 
 		post("/getMany") {
-			call.respond(logic.getDocuments(credentials(), call.receive<List<String>>()))
+			call.respond(logic.getDocuments(sessionId(), call.receive<List<String>>()))
 		}
 
 		put("/modify") {
-			call.respond(logic.modifyDocument(credentials(), call.receive<DecryptedDocument>()))
+			call.respond(logic.modifyDocument(sessionId(), call.receive<DecryptedDocument>()))
 		}
 
 		put("/modifyMany") {
-			call.respond(logic.modifyDocuments(credentials(), call.receive<List<DecryptedDocument>>()))
+			call.respond(logic.modifyDocuments(sessionId(), call.receive<List<DecryptedDocument>>()))
 		}
 
 		delete("/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.deleteDocumentById(credentials(), id, rev))
+			call.respond(logic.deleteDocumentById(sessionId(), id, rev))
 		}
 
 		post("/deleteMany") {
-			call.respond(logic.deleteDocumentsByIds(credentials(), call.receive<List<StoredDocumentIdentifier>>()))
+			call.respond(logic.deleteDocumentsByIds(sessionId(), call.receive<List<StoredDocumentIdentifier>>()))
 		}
 
 		post("/undelete/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.undeleteDocumentById(credentials(), id, rev))
+			call.respond(logic.undeleteDocumentById(sessionId(), id, rev))
 		}
 
 		delete("/purge/{id}/{rev}") {
 			val id = call.parameters["id"]!!
 			val rev = call.parameters["rev"]!!
-			logic.purgeDocumentById(credentials(), id, rev)
+			logic.purgeDocumentById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchDocumentsBy(credentials(), call.receive<BaseFilterOptions<Document>>()))
+			call.respond(logic.matchDocumentsBy(sessionId(), call.receive<BaseFilterOptions<Document>>()))
 		}
 
 		post("/matchBySorted") {
-			call.respond(logic.matchDocumentsBySorted(credentials(), call.receive<BaseSortableFilterOptions<Document>>()))
+			call.respond(logic.matchDocumentsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Document>>()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterDocumentsBy(credentials(), call.receive<BaseFilterOptions<Document>>()))
+			call.respond(logic.filterDocumentsBy(sessionId(), call.receive<BaseFilterOptions<Document>>()))
 		}
 
 		post("/filterBySorted") {
-			call.respond(logic.filterDocumentsBySorted(credentials(), call.receive<BaseSortableFilterOptions<Document>>()))
+			call.respond(logic.filterDocumentsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Document>>()))
 		}
 
 		// Main attachment
 		get("/mainAttachment/{documentId}") {
 			val documentId = call.parameters["documentId"]!!
-			val result = logic.getRawMainAttachment(credentials(), documentId)
+			val result = logic.getRawMainAttachment(sessionId(), documentId)
 			call.respondBytes(result)
 		}
 
@@ -103,20 +103,20 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 			val utis = call.request.queryParameters["utis"]?.split(",")
 			val encrypted = call.request.queryParameters["encrypted"]?.toBoolean() ?: false
 			val attachment = call.receive<ByteArray>()
-			call.respond(logic.setRawMainAttachment(credentials(), documentId, rev, utis, attachment, encrypted))
+			call.respond(logic.setRawMainAttachment(sessionId(), documentId, rev, utis, attachment, encrypted))
 		}
 
 		delete("/mainAttachment/{documentId}/{rev}") {
 			val documentId = call.parameters["documentId"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.deleteMainAttachment(credentials(), documentId, rev))
+			call.respond(logic.deleteMainAttachment(sessionId(), documentId, rev))
 		}
 
 		// Secondary attachment
 		get("/secondaryAttachment/{documentId}/{key}") {
 			val documentId = call.parameters["documentId"]!!
 			val key = call.parameters["key"]!!
-			val result = logic.getRawSecondaryAttachment(credentials(), documentId, key)
+			val result = logic.getRawSecondaryAttachment(sessionId(), documentId, key)
 			call.respondBytes(result)
 		}
 
@@ -127,52 +127,52 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 			val utis = call.request.queryParameters["utis"]?.split(",")
 			val encrypted = call.request.queryParameters["encrypted"]?.toBoolean() ?: false
 			val attachment = call.receive<ByteArray>()
-			call.respond(logic.setRawSecondaryAttachment(credentials(), documentId, key, rev, utis, attachment, encrypted))
+			call.respond(logic.setRawSecondaryAttachment(sessionId(), documentId, key, rev, utis, attachment, encrypted))
 		}
 
 		delete("/secondaryAttachment/{documentId}/{key}/{rev}") {
 			val documentId = call.parameters["documentId"]!!
 			val key = call.parameters["key"]!!
 			val rev = call.parameters["rev"]!!
-			call.respond(logic.deleteSecondaryAttachment(credentials(), documentId, key, rev))
+			call.respond(logic.deleteSecondaryAttachment(sessionId(), documentId, key, rev))
 		}
 
 		// WithLinks variants
 		post("/create/withLinks") {
-			call.respond(logic.createDocumentWithLinks(credentials(), call.receive<DecryptedDocument>()))
+			call.respond(logic.createDocumentWithLinks(sessionId(), call.receive<DecryptedDocument>()))
 		}
 
 		post("/createMany/withLinks") {
-			call.respond(logic.createDocumentsWithLinks(credentials(), call.receive<List<DecryptedDocument>>()))
+			call.respond(logic.createDocumentsWithLinks(sessionId(), call.receive<List<DecryptedDocument>>()))
 		}
 
 		get("/{id}/withLinks") {
-			val result = logic.getDocumentWithLinks(credentials(), call.parameters["id"]!!)
+			val result = logic.getDocumentWithLinks(sessionId(), call.parameters["id"]!!)
 			if (result != null) call.respond(result) else call.respond(HttpStatusCode.NotFound)
 		}
 
 		post("/getMany/withLinks") {
-			call.respond(logic.getDocumentsWithLinks(credentials(), call.receive<List<String>>()))
+			call.respond(logic.getDocumentsWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
 		put("/modify/withLinks") {
-			call.respond(logic.modifyDocumentWithLinks(credentials(), call.receive<DecryptedDocument>()))
+			call.respond(logic.modifyDocumentWithLinks(sessionId(), call.receive<DecryptedDocument>()))
 		}
 
 		put("/modifyMany/withLinks") {
-			call.respond(logic.modifyDocumentsWithLinks(credentials(), call.receive<List<DecryptedDocument>>()))
+			call.respond(logic.modifyDocumentsWithLinks(sessionId(), call.receive<List<DecryptedDocument>>()))
 		}
 
 		post("/undelete/{id}/{rev}/withLinks") {
-			call.respond(logic.undeleteDocumentByIdWithLinks(credentials(), call.parameters["id"]!!, call.parameters["rev"]!!))
+			call.respond(logic.undeleteDocumentByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterDocumentsByWithLinks(credentials(), call.receive<BaseFilterOptions<Document>>()))
+			call.respond(logic.filterDocumentsByWithLinks(sessionId(), call.receive<BaseFilterOptions<Document>>()))
 		}
 
 		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterDocumentsBySortedWithLinks(credentials(), call.receive<BaseSortableFilterOptions<Document>>()))
+			call.respond(logic.filterDocumentsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<Document>>()))
 		}
 	}
 }

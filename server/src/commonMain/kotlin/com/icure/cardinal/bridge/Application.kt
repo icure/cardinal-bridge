@@ -6,6 +6,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
+import com.icure.cardinal.bridge.config.configureErrorHandler
 import com.icure.cardinal.bridge.config.configureSerialization
 import com.icure.cardinal.bridge.controllers.configureRouting
 import io.ktor.server.cio.CIO
@@ -22,6 +23,7 @@ class ServerMain : CliktCommand() {
 			port = port,
 			module = {
 				configureSerialization()
+				configureErrorHandler()
 				configureRouting(
 					CardinalSdkInitializer(
 						applicationId,

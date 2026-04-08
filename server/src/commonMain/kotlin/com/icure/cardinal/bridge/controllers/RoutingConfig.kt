@@ -8,9 +8,8 @@ import com.icure.cardinal.bridge.logic.FormLogic
 import com.icure.cardinal.bridge.logic.HealthElementLogic
 import com.icure.cardinal.bridge.logic.MessageLogic
 import com.icure.cardinal.bridge.logic.PatientLogic
-import com.icure.cardinal.bridge.model.BasicCredentials
-import com.icure.cardinal.bridge.model.Credentials
-import com.icure.cardinal.bridge.model.JwtCredentials
+import com.icure.cardinal.sdk.utils.RequestStatusException
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.response.respond
@@ -18,10 +17,12 @@ import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import kotlin.io.encoding.Base64
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalEncodingApi::class)
+@OptIn(ExperimentalEncodingApi::class, ExperimentalUuidApi::class)
 fun Application.configureRouting(
 	sdkInitializer: CardinalSdkInitializer
 ) {
@@ -34,36 +35,30 @@ fun Application.configureRouting(
 			messageRoutes(MessageLogic(sdkInitializer))
 			documentRoutes(DocumentLogic(sdkInitializer))
 			calendarItemRoutes(CalendarItemLogic(sdkInitializer))
+			sessionRoutes(sdkInitializer)
 
 			get("/health") {
-				call.respond(HttpStatusCode.OK)
+				call.respond(HttpStatusCode.NoContent)
+			}
+
+			get("/illegalArgument") {
+				throw IllegalArgumentException("This is an illegal argument exception")
+			}
+
+			get("/requestStatus") {
+				throw RequestStatusException(HttpMethod.Delete, "https://fake.url/whatever", 402, "{ \"body\": \"what\" }")
+			}
+
+			get("/text") {
+				call.respond(HttpStatusCode.OK, JsonPrimitive(Uuid.random().toHexDashString()))
 			}
 		}
 	}
 }
 
 @OptIn(ExperimentalEncodingApi::class)
-internal suspend fun RoutingContext.credentials(): Credentials {
-	val authHeader = call.request.headers["Authorization"]
-
-	val credentials: Credentials? = when {
-		authHeader?.startsWith("Basic ") == true -> {
-			authHeader.removePrefix("Basic ")
-				.let { Base64.decode(it).decodeToString() }
-				.split(":", limit = 2)
-				.takeIf { it.size == 2 }
-				?.let { BasicCredentials(it[0], it[1]) }
-		}
-		authHeader?.startsWith("Bearer ") == true -> {
-			authHeader.removePrefix("Bearer ").takeIf { it.isNotBlank() }?.let { JwtCredentials(it) }
-		}
-		else -> null
+internal fun RoutingContext.sessionId() =
+	requireNotNull(call.request.headers["Session"]) {
+		"Missing required session header"
 	}
 
-	if (credentials == null) {
-		call.respond(HttpStatusCode.Unauthorized)
-		throw IllegalStateException("Missing or invalid Authorization header")
-	}
-
-	return credentials
-}

@@ -1,7 +1,6 @@
 package com.icure.cardinal.bridge.logic
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
-import com.icure.cardinal.bridge.model.Credentials
 import com.icure.cardinal.sdk.filters.BaseFilterOptions
 import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.DecryptedMessage
@@ -9,101 +8,99 @@ import com.icure.cardinal.sdk.model.Message
 import com.icure.cardinal.bridge.model.MessageWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 
-class MessageLogic(private val sdkInitializer: CardinalSdkInitializer) {
-	private suspend fun sdk(credentials: Credentials) =
-		sdkInitializer.getOrInit(credentials)
+class MessageLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
 	// CRUD
 
-	suspend fun createMessage(credentials: Credentials, entity: DecryptedMessage): DecryptedMessage =
-		sdk(credentials).message.createMessage(entity)
+	suspend fun createMessage(sessionId: String, entity: DecryptedMessage): DecryptedMessage =
+		sdk(sessionId).message.createMessage(entity)
 
-	suspend fun createMessages(credentials: Credentials, entities: List<DecryptedMessage>): List<DecryptedMessage> =
-		sdk(credentials).message.createMessages(entities)
+	suspend fun createMessages(sessionId: String, entities: List<DecryptedMessage>): List<DecryptedMessage> =
+		sdk(sessionId).message.createMessages(entities)
 
-	suspend fun getMessage(credentials: Credentials, entityId: String): DecryptedMessage? =
-		sdk(credentials).message.getMessage(entityId)
+	suspend fun getMessage(sessionId: String, entityId: String): DecryptedMessage? =
+		sdk(sessionId).message.getMessage(entityId)
 
-	suspend fun getMessages(credentials: Credentials, entityIds: List<String>): List<DecryptedMessage> =
-		sdk(credentials).message.getMessages(entityIds)
+	suspend fun getMessages(sessionId: String, entityIds: List<String>): List<DecryptedMessage> =
+		sdk(sessionId).message.getMessages(entityIds)
 
-	suspend fun modifyMessage(credentials: Credentials, entity: DecryptedMessage): DecryptedMessage =
-		sdk(credentials).message.modifyMessage(entity)
+	suspend fun modifyMessage(sessionId: String, entity: DecryptedMessage): DecryptedMessage =
+		sdk(sessionId).message.modifyMessage(entity)
 
-	suspend fun modifyMessages(credentials: Credentials, entities: List<DecryptedMessage>): List<DecryptedMessage> =
-		sdk(credentials).message.modifyMessages(entities)
+	suspend fun modifyMessages(sessionId: String, entities: List<DecryptedMessage>): List<DecryptedMessage> =
+		sdk(sessionId).message.modifyMessages(entities)
 
-	suspend fun deleteMessageById(credentials: Credentials, entityId: String, rev: String): StoredDocumentIdentifier =
-		sdk(credentials).message.deleteMessageById(entityId, rev)
+	suspend fun deleteMessageById(sessionId: String, entityId: String, rev: String): StoredDocumentIdentifier =
+		sdk(sessionId).message.deleteMessageById(entityId, rev)
 
-	suspend fun deleteMessagesByIds(credentials: Credentials, entityIds: List<StoredDocumentIdentifier>): List<StoredDocumentIdentifier> =
-		sdk(credentials).message.deleteMessagesByIds(entityIds)
+	suspend fun deleteMessagesByIds(sessionId: String, entityIds: List<StoredDocumentIdentifier>): List<StoredDocumentIdentifier> =
+		sdk(sessionId).message.deleteMessagesByIds(entityIds)
 
-	suspend fun undeleteMessageById(credentials: Credentials, id: String, rev: String): DecryptedMessage =
-		sdk(credentials).message.undeleteMessageById(id, rev)
+	suspend fun undeleteMessageById(sessionId: String, id: String, rev: String): DecryptedMessage =
+		sdk(sessionId).message.undeleteMessageById(id, rev)
 
-	suspend fun purgeMessageById(credentials: Credentials, id: String, rev: String) =
-		sdk(credentials).message.purgeMessageById(id, rev)
+	suspend fun purgeMessageById(sessionId: String, id: String, rev: String) =
+		sdk(sessionId).message.purgeMessageById(id, rev)
 
 	// Filter/Match
 
-	suspend fun matchMessagesBy(credentials: Credentials, filter: BaseFilterOptions<Message>): List<String> =
-		sdk(credentials).message.matchMessagesBy(filter)
+	suspend fun matchMessagesBy(sessionId: String, filter: BaseFilterOptions<Message>): List<String> =
+		sdk(sessionId).message.matchMessagesBy(filter)
 
-	suspend fun matchMessagesBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<Message>): List<String> =
-		sdk(credentials).message.matchMessagesBySorted(filter)
+	suspend fun matchMessagesBySorted(sessionId: String, filter: BaseSortableFilterOptions<Message>): List<String> =
+		sdk(sessionId).message.matchMessagesBySorted(filter)
 
-	suspend fun filterMessagesBy(credentials: Credentials, filter: BaseFilterOptions<Message>): List<DecryptedMessage> {
-		val iterator = sdk(credentials).message.filterMessagesBy(filter)
+	suspend fun filterMessagesBy(sessionId: String, filter: BaseFilterOptions<Message>): List<DecryptedMessage> {
+		val iterator = sdk(sessionId).message.filterMessagesBy(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
-	suspend fun filterMessagesBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<Message>): List<DecryptedMessage> {
-		val iterator = sdk(credentials).message.filterMessagesBySorted(filter)
+	suspend fun filterMessagesBySorted(sessionId: String, filter: BaseSortableFilterOptions<Message>): List<DecryptedMessage> {
+		val iterator = sdk(sessionId).message.filterMessagesBySorted(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
 	// Message-specific
 
-	suspend fun createMessageInTopic(credentials: Credentials, entity: DecryptedMessage): DecryptedMessage =
-		sdk(credentials).message.createMessageInTopic(entity)
+	suspend fun createMessageInTopic(sessionId: String, entity: DecryptedMessage): DecryptedMessage =
+		sdk(sessionId).message.createMessageInTopic(entity)
 
 	// WithLinks
 
-	private suspend fun withLinks(credentials: Credentials, message: DecryptedMessage): MessageWithLinks {
-		val sdk = sdk(credentials)
+	private suspend fun withLinks(sessionId: String, message: DecryptedMessage): MessageWithLinks {
+		val sdk = sdk(sessionId)
 		val patientIds = sdk.message.decryptPatientIdOf(message).map { it.entityId }.toSet()
 		val ownSecretIds = sdk.message.getSecretIdsOf(message).values.flatMap { refs -> refs.map { it.entityId } }.toSet()
 		return MessageWithLinks(message, patientIds, ownSecretIds)
 	}
 
-	suspend fun createMessageWithLinks(credentials: Credentials, entity: DecryptedMessage): MessageWithLinks =
-		withLinks(credentials, createMessage(credentials, entity))
+	suspend fun createMessageWithLinks(sessionId: String, entity: DecryptedMessage): MessageWithLinks =
+		withLinks(sessionId, createMessage(sessionId, entity))
 
-	suspend fun createMessagesWithLinks(credentials: Credentials, entities: List<DecryptedMessage>): List<MessageWithLinks> =
-		createMessages(credentials, entities).map { withLinks(credentials, it) }
+	suspend fun createMessagesWithLinks(sessionId: String, entities: List<DecryptedMessage>): List<MessageWithLinks> =
+		createMessages(sessionId, entities).map { withLinks(sessionId, it) }
 
-	suspend fun getMessageWithLinks(credentials: Credentials, entityId: String): MessageWithLinks? =
-		getMessage(credentials, entityId)?.let { withLinks(credentials, it) }
+	suspend fun getMessageWithLinks(sessionId: String, entityId: String): MessageWithLinks? =
+		getMessage(sessionId, entityId)?.let { withLinks(sessionId, it) }
 
-	suspend fun getMessagesWithLinks(credentials: Credentials, entityIds: List<String>): List<MessageWithLinks> =
-		getMessages(credentials, entityIds).map { withLinks(credentials, it) }
+	suspend fun getMessagesWithLinks(sessionId: String, entityIds: List<String>): List<MessageWithLinks> =
+		getMessages(sessionId, entityIds).map { withLinks(sessionId, it) }
 
-	suspend fun modifyMessageWithLinks(credentials: Credentials, entity: DecryptedMessage): MessageWithLinks =
-		withLinks(credentials, modifyMessage(credentials, entity))
+	suspend fun modifyMessageWithLinks(sessionId: String, entity: DecryptedMessage): MessageWithLinks =
+		withLinks(sessionId, modifyMessage(sessionId, entity))
 
-	suspend fun modifyMessagesWithLinks(credentials: Credentials, entities: List<DecryptedMessage>): List<MessageWithLinks> =
-		modifyMessages(credentials, entities).map { withLinks(credentials, it) }
+	suspend fun modifyMessagesWithLinks(sessionId: String, entities: List<DecryptedMessage>): List<MessageWithLinks> =
+		modifyMessages(sessionId, entities).map { withLinks(sessionId, it) }
 
-	suspend fun undeleteMessageByIdWithLinks(credentials: Credentials, id: String, rev: String): MessageWithLinks =
-		withLinks(credentials, undeleteMessageById(credentials, id, rev))
+	suspend fun undeleteMessageByIdWithLinks(sessionId: String, id: String, rev: String): MessageWithLinks =
+		withLinks(sessionId, undeleteMessageById(sessionId, id, rev))
 
-	suspend fun filterMessagesByWithLinks(credentials: Credentials, filter: BaseFilterOptions<Message>): List<MessageWithLinks> =
-		filterMessagesBy(credentials, filter).map { withLinks(credentials, it) }
+	suspend fun filterMessagesByWithLinks(sessionId: String, filter: BaseFilterOptions<Message>): List<MessageWithLinks> =
+		filterMessagesBy(sessionId, filter).map { withLinks(sessionId, it) }
 
-	suspend fun filterMessagesBySortedWithLinks(credentials: Credentials, filter: BaseSortableFilterOptions<Message>): List<MessageWithLinks> =
-		filterMessagesBySorted(credentials, filter).map { withLinks(credentials, it) }
+	suspend fun filterMessagesBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<Message>): List<MessageWithLinks> =
+		filterMessagesBySorted(sessionId, filter).map { withLinks(sessionId, it) }
 
-	suspend fun createMessageInTopicWithLinks(credentials: Credentials, entity: DecryptedMessage): MessageWithLinks =
-		withLinks(credentials, createMessageInTopic(credentials, entity))
+	suspend fun createMessageInTopicWithLinks(sessionId: String, entity: DecryptedMessage): MessageWithLinks =
+		withLinks(sessionId, createMessageInTopic(sessionId, entity))
 }

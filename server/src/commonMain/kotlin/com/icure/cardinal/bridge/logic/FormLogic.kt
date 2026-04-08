@@ -1,7 +1,6 @@
 package com.icure.cardinal.bridge.logic
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
-import com.icure.cardinal.bridge.model.Credentials
 import com.icure.cardinal.sdk.filters.BaseFilterOptions
 import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.DecryptedForm
@@ -9,99 +8,97 @@ import com.icure.cardinal.sdk.model.Form
 import com.icure.cardinal.bridge.model.FormWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 
-class FormLogic(private val sdkInitializer: CardinalSdkInitializer) {
-	private suspend fun sdk(credentials: Credentials) =
-		sdkInitializer.getOrInit(credentials)
+class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
 	// CRUD
 
-	suspend fun createForm(credentials: Credentials, entity: DecryptedForm): DecryptedForm =
-		sdk(credentials).form.createForm(entity)
+	suspend fun createForm(sessionId: String, entity: DecryptedForm): DecryptedForm =
+		sdk(sessionId).form.createForm(entity)
 
-	suspend fun createForms(credentials: Credentials, entities: List<DecryptedForm>): List<DecryptedForm> =
-		sdk(credentials).form.createForms(entities)
+	suspend fun createForms(sessionId: String, entities: List<DecryptedForm>): List<DecryptedForm> =
+		sdk(sessionId).form.createForms(entities)
 
-	suspend fun getForm(credentials: Credentials, entityId: String): DecryptedForm? =
-		sdk(credentials).form.getForm(entityId)
+	suspend fun getForm(sessionId: String, entityId: String): DecryptedForm? =
+		sdk(sessionId).form.getForm(entityId)
 
-	suspend fun getForms(credentials: Credentials, entityIds: List<String>): List<DecryptedForm> =
-		sdk(credentials).form.getForms(entityIds)
+	suspend fun getForms(sessionId: String, entityIds: List<String>): List<DecryptedForm> =
+		sdk(sessionId).form.getForms(entityIds)
 
-	suspend fun modifyForm(credentials: Credentials, entity: DecryptedForm): DecryptedForm =
-		sdk(credentials).form.modifyForm(entity)
+	suspend fun modifyForm(sessionId: String, entity: DecryptedForm): DecryptedForm =
+		sdk(sessionId).form.modifyForm(entity)
 
-	suspend fun modifyForms(credentials: Credentials, entities: List<DecryptedForm>): List<DecryptedForm> =
-		sdk(credentials).form.modifyForms(entities)
+	suspend fun modifyForms(sessionId: String, entities: List<DecryptedForm>): List<DecryptedForm> =
+		sdk(sessionId).form.modifyForms(entities)
 
-	suspend fun deleteFormById(credentials: Credentials, entityId: String, rev: String): StoredDocumentIdentifier =
-		sdk(credentials).form.deleteFormById(entityId, rev)
+	suspend fun deleteFormById(sessionId: String, entityId: String, rev: String): StoredDocumentIdentifier =
+		sdk(sessionId).form.deleteFormById(entityId, rev)
 
-	suspend fun deleteFormsByIds(credentials: Credentials, entityIds: List<StoredDocumentIdentifier>): List<StoredDocumentIdentifier> =
-		sdk(credentials).form.deleteFormsByIds(entityIds)
+	suspend fun deleteFormsByIds(sessionId: String, entityIds: List<StoredDocumentIdentifier>): List<StoredDocumentIdentifier> =
+		sdk(sessionId).form.deleteFormsByIds(entityIds)
 
-	suspend fun undeleteFormById(credentials: Credentials, id: String, rev: String): DecryptedForm =
-		sdk(credentials).form.undeleteFormById(id, rev)
+	suspend fun undeleteFormById(sessionId: String, id: String, rev: String): DecryptedForm =
+		sdk(sessionId).form.undeleteFormById(id, rev)
 
-	suspend fun purgeFormById(credentials: Credentials, id: String, rev: String) =
-		sdk(credentials).form.purgeFormById(id, rev)
+	suspend fun purgeFormById(sessionId: String, id: String, rev: String) =
+		sdk(sessionId).form.purgeFormById(id, rev)
 
 	// Filter/Match
 
-	suspend fun matchFormsBy(credentials: Credentials, filter: BaseFilterOptions<Form>): List<String> =
-		sdk(credentials).form.matchFormsBy(filter)
+	suspend fun matchFormsBy(sessionId: String, filter: BaseFilterOptions<Form>): List<String> =
+		sdk(sessionId).form.matchFormsBy(filter)
 
-	suspend fun matchFormsBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<Form>): List<String> =
-		sdk(credentials).form.matchFormsBySorted(filter)
+	suspend fun matchFormsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Form>): List<String> =
+		sdk(sessionId).form.matchFormsBySorted(filter)
 
-	suspend fun filterFormsBy(credentials: Credentials, filter: BaseFilterOptions<Form>): List<DecryptedForm> {
-		val iterator = sdk(credentials).form.filterFormsBy(filter)
+	suspend fun filterFormsBy(sessionId: String, filter: BaseFilterOptions<Form>): List<DecryptedForm> {
+		val iterator = sdk(sessionId).form.filterFormsBy(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
-	suspend fun filterFormsBySorted(credentials: Credentials, filter: BaseSortableFilterOptions<Form>): List<DecryptedForm> {
-		val iterator = sdk(credentials).form.filterFormsBySorted(filter)
+	suspend fun filterFormsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Form>): List<DecryptedForm> {
+		val iterator = sdk(sessionId).form.filterFormsBySorted(filter)
 		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
 	}
 
 	// Form-specific
 
-	suspend fun getLatestFormByUniqueId(credentials: Credentials, uniqueId: String): DecryptedForm =
-		sdk(credentials).form.getLatestFormByUniqueId(uniqueId)
+	suspend fun getLatestFormByUniqueId(sessionId: String, uniqueId: String): DecryptedForm =
+		sdk(sessionId).form.getLatestFormByUniqueId(uniqueId)
 
 	// WithLinks
 
-	private suspend fun withLinks(credentials: Credentials, form: DecryptedForm): FormWithLinks {
-		val patientIds = sdk(credentials).form.decryptPatientIdOf(form).map { it.entityId }.toSet()
+	private suspend fun withLinks(sessionId: String, form: DecryptedForm): FormWithLinks {
+		val patientIds = sdk(sessionId).form.decryptPatientIdOf(form).map { it.entityId }.toSet()
 		return FormWithLinks(form, patientIds)
 	}
 
-	suspend fun createFormWithLinks(credentials: Credentials, entity: DecryptedForm): FormWithLinks =
-		withLinks(credentials, createForm(credentials, entity))
+	suspend fun createFormWithLinks(sessionId: String, entity: DecryptedForm): FormWithLinks =
+		withLinks(sessionId, createForm(sessionId, entity))
 
-	suspend fun createFormsWithLinks(credentials: Credentials, entities: List<DecryptedForm>): List<FormWithLinks> =
-		createForms(credentials, entities).map { withLinks(credentials, it) }
+	suspend fun createFormsWithLinks(sessionId: String, entities: List<DecryptedForm>): List<FormWithLinks> =
+		createForms(sessionId, entities).map { withLinks(sessionId, it) }
 
-	suspend fun getFormWithLinks(credentials: Credentials, entityId: String): FormWithLinks? =
-		getForm(credentials, entityId)?.let { withLinks(credentials, it) }
+	suspend fun getFormWithLinks(sessionId: String, entityId: String): FormWithLinks? =
+		getForm(sessionId, entityId)?.let { withLinks(sessionId, it) }
 
-	suspend fun getFormsWithLinks(credentials: Credentials, entityIds: List<String>): List<FormWithLinks> =
-		getForms(credentials, entityIds).map { withLinks(credentials, it) }
+	suspend fun getFormsWithLinks(sessionId: String, entityIds: List<String>): List<FormWithLinks> =
+		getForms(sessionId, entityIds).map { withLinks(sessionId, it) }
 
-	suspend fun modifyFormWithLinks(credentials: Credentials, entity: DecryptedForm): FormWithLinks =
-		withLinks(credentials, modifyForm(credentials, entity))
+	suspend fun modifyFormWithLinks(sessionId: String, entity: DecryptedForm): FormWithLinks =
+		withLinks(sessionId, modifyForm(sessionId, entity))
 
-	suspend fun modifyFormsWithLinks(credentials: Credentials, entities: List<DecryptedForm>): List<FormWithLinks> =
-		modifyForms(credentials, entities).map { withLinks(credentials, it) }
+	suspend fun modifyFormsWithLinks(sessionId: String, entities: List<DecryptedForm>): List<FormWithLinks> =
+		modifyForms(sessionId, entities).map { withLinks(sessionId, it) }
 
-	suspend fun undeleteFormByIdWithLinks(credentials: Credentials, id: String, rev: String): FormWithLinks =
-		withLinks(credentials, undeleteFormById(credentials, id, rev))
+	suspend fun undeleteFormByIdWithLinks(sessionId: String, id: String, rev: String): FormWithLinks =
+		withLinks(sessionId, undeleteFormById(sessionId, id, rev))
 
-	suspend fun filterFormsByWithLinks(credentials: Credentials, filter: BaseFilterOptions<Form>): List<FormWithLinks> =
-		filterFormsBy(credentials, filter).map { withLinks(credentials, it) }
+	suspend fun filterFormsByWithLinks(sessionId: String, filter: BaseFilterOptions<Form>): List<FormWithLinks> =
+		filterFormsBy(sessionId, filter).map { withLinks(sessionId, it) }
 
-	suspend fun filterFormsBySortedWithLinks(credentials: Credentials, filter: BaseSortableFilterOptions<Form>): List<FormWithLinks> =
-		filterFormsBySorted(credentials, filter).map { withLinks(credentials, it) }
+	suspend fun filterFormsBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<Form>): List<FormWithLinks> =
+		filterFormsBySorted(sessionId, filter).map { withLinks(sessionId, it) }
 
-	suspend fun getLatestFormByUniqueIdWithLinks(credentials: Credentials, uniqueId: String): FormWithLinks =
-		withLinks(credentials, getLatestFormByUniqueId(credentials, uniqueId))
+	suspend fun getLatestFormByUniqueIdWithLinks(sessionId: String, uniqueId: String): FormWithLinks =
+		withLinks(sessionId, getLatestFormByUniqueId(sessionId, uniqueId))
 }

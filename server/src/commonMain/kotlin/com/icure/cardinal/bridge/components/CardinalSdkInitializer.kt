@@ -8,11 +8,11 @@ import com.icure.cardinal.sdk.auth.AuthSecretDetails
 import com.icure.cardinal.sdk.auth.AuthSecretProvider
 import com.icure.cardinal.sdk.auth.AuthenticationProcessApi
 import com.icure.cardinal.sdk.auth.UsernamePassword
-import com.icure.cardinal.sdk.model.embed.AuthenticationClass
 import com.icure.cardinal.sdk.crypto.CryptoStrategies
 import com.icure.cardinal.sdk.crypto.KeyPairRecoverer
 import com.icure.cardinal.sdk.crypto.impl.exportSpkiHex
 import com.icure.cardinal.sdk.model.DataOwnerWithType
+import com.icure.cardinal.sdk.model.embed.AuthenticationClass
 import com.icure.cardinal.sdk.model.extensions.publicKeysWithSha256Spki
 import com.icure.cardinal.sdk.model.specializations.Base64String
 import com.icure.cardinal.sdk.options.AuthenticationMethod
@@ -21,19 +21,16 @@ import com.icure.cardinal.sdk.storage.impl.VolatileStorageFacade
 import com.icure.cardinal.sdk.utils.decode
 import com.icure.kryptom.crypto.CryptoService
 import com.icure.kryptom.crypto.RsaAlgorithm
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.concurrent.Volatile
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 
 /**
- * This class allows to instantiate or renew an instance of [CardinalSdk] that can be used at the controller level.
+ * This class allows instantiating an instance of [CardinalSdk] which will be accessible from a given "sessionId".
  *
  * @param applicationId the applicationId of the database.
  * @param baseUrl the Cardinal backend url to use (api or nightly).
@@ -43,44 +40,49 @@ class CardinalSdkInitializer(
 	private val baseUrl: String,
 ) {
 	@Volatile
-	private var cache = emptyMap<Credentials, Deferred<CardinalSdk>>()
+	private var cache = emptyMap<String, CardinalSdk>()
 	private val cacheMutex = Mutex()
 
-	init {
-		println("Connecting to url $baseUrl with application id ${if (applicationId != null) "\"$applicationId\"" else "<null>"}")
+	/**
+	 * Get a cardinal sdk for the given [sessionId] if it exists.
+	 */
+	fun getSdk(sessionId: String): CardinalSdk =
+		requireNotNull(cache[sessionId]) { "No SDK for session $sessionId" }
+
+	/**
+	 * Dispose of the cardinal sdk associated with the provided [sessionId]
+	 */
+	suspend fun destroySession(sessionId: String) {
+		cacheMutex.withLock {
+			requireNotNull(cache[sessionId]) {
+				"No SDK for session $sessionId"
+			}.also {
+				cache = cache - sessionId
+			}
+		}.scope.cancel()
 	}
 
 	/**
-	 * Get a cardinal sdk for the given [credentials].
-	 * If there is already an SDK with those credentials it is returned, otherwise a new one is created.
-	 * Failures are not cached.
+	 * Creates a new Cardinal SDK with the provided [credentials] and [pkcs8Keys], and associates it with the returned
+	 * session id.
+	 * SDKs are kept indefinitely, even if they became unusable due to expired sessionId, until [destroySession] is
+	 * called.
 	 */
-	suspend fun getOrInit(credentials: Credentials, pkcs8Keys: Map<String, Set<Base64String>> = emptyMap()): CardinalSdk =
-		coroutineScope {
-			var res: CardinalSdk? = null
-			while (res == null) {
-				val existing = cache[credentials]
-				if (existing != null) {
-					try {
-						res = existing.await()
-						continue
-					} catch (_: Exception) {
-						// else ignore, move on
-					}
+	@OptIn(ExperimentalUuidApi::class)
+	suspend fun createSession(credentials: Credentials, pkcs8Keys: Map<String, Set<Base64String>>): String {
+		val sdk = initialize(credentials, pkcs8Keys)
+		while (true) {
+			val id = Uuid.random().toHexDashString()
+			cacheMutex.withLock {
+				if (id !in cache) {
+					cache = cache + (id to sdk)
+					return id
 				}
-				ensureActive()
-				val jobCreatedByMe = cacheMutex.withLock {
-					if (existing === cache[credentials]) {
-						val job = async(start = CoroutineStart.LAZY) { initialize(credentials, pkcs8Keys) }
-						cache = cache + (credentials to job)
-						job
-					} else null
-				}
-				if (jobCreatedByMe != null) res = jobCreatedByMe.await()
-				// Someone else created the job wait for them
+				// else try another id
 			}
-			res
 		}
+	}
+
 
 	private suspend fun initialize(credentials: Credentials, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
 		CardinalSdk.initialize(
