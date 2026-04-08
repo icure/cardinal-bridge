@@ -7,7 +7,12 @@ import com.icure.cardinal.sdk.CardinalSdk
 import com.icure.cardinal.sdk.auth.AuthSecretDetails
 import com.icure.cardinal.sdk.auth.AuthSecretProvider
 import com.icure.cardinal.sdk.auth.AuthenticationProcessApi
+import com.icure.cardinal.sdk.auth.JwtBearer
+import com.icure.cardinal.sdk.auth.JwtBearerAndRefresh
 import com.icure.cardinal.sdk.auth.UsernamePassword
+import com.icure.cardinal.sdk.auth.services.AuthProvider
+import com.icure.cardinal.sdk.auth.services.JwtBasedAuthProvider
+import com.icure.cardinal.sdk.auth.services.TokenBasedAuthService
 import com.icure.cardinal.sdk.crypto.CryptoStrategies
 import com.icure.cardinal.sdk.crypto.KeyPairRecoverer
 import com.icure.cardinal.sdk.crypto.impl.exportSpkiHex
@@ -18,12 +23,19 @@ import com.icure.cardinal.sdk.model.specializations.Base64String
 import com.icure.cardinal.sdk.options.AuthenticationMethod
 import com.icure.cardinal.sdk.options.SdkOptions
 import com.icure.cardinal.sdk.storage.impl.VolatileStorageFacade
+import com.icure.cardinal.sdk.utils.RequestStatusException
 import com.icure.cardinal.sdk.utils.decode
 import com.icure.kryptom.crypto.CryptoService
 import com.icure.kryptom.crypto.RsaAlgorithm
+import com.icure.utils.InternalIcureApi
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.bearerAuth
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.concurrent.Volatile
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -83,7 +95,7 @@ class CardinalSdkInitializer(
 		}
 	}
 
-
+	@OptIn(InternalIcureApi::class)
 	private suspend fun initialize(credentials: Credentials, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
 		CardinalSdk.initialize(
 			projectId = applicationId,
@@ -92,18 +104,7 @@ class CardinalSdkInitializer(
 				is BasicCredentials -> AuthenticationMethod.UsingCredentials(
 					UsernamePassword(credentials.username, credentials.password)
 				)
-				is JwtCredentials -> AuthenticationMethod.UsingSecretProvider(
-					loginUsername = null,
-					existingJwt = credentials.token,
-					secretProvider = object : AuthSecretProvider {
-						override suspend fun getSecret(
-							acceptedSecrets: Set<AuthenticationClass>,
-							previousAttempts: List<AuthSecretDetails>,
-							authProcessApi: AuthenticationProcessApi
-						): AuthSecretDetails =
-							throw IllegalStateException("JWT token expired, re-authentication required")
-					}
-				)
+				is JwtCredentials -> AuthenticationMethod.UsingAuthProvider(OneJwtAuthProvider(credentials.token))
 			},
 			baseStorage = VolatileStorageFacade(),
 			options = SdkOptions(
@@ -145,4 +146,50 @@ class CardinalSdkInitializer(
 				lenientJson = true
 			)
 		)
+}
+
+@InternalIcureApi
+private class OneJwtAuthProvider(
+	val bearerToken: String
+) : JwtBasedAuthProvider {
+	private val bearer = JwtBearer(bearerToken)
+
+	private val authService = object : TokenBasedAuthService<JwtBearer> {
+		override suspend fun getToken(): JwtBearer = bearer
+
+		override suspend fun setAuthenticationInRequest(
+			builder: HttpRequestBuilder,
+			authenticationClass: AuthenticationClass?
+		) {
+			builder.bearerAuth(bearerToken)
+		}
+
+		override suspend fun invalidateCurrentAuthentication(
+			error: RequestStatusException,
+			requiredAuthClass: AuthenticationClass?
+		) {
+			throw UnsupportedOperationException("invalidateCurrentAuthentication can't work if there is only one bearer")
+		}
+	}
+
+	override fun getAuthService(): TokenBasedAuthService<JwtBearer> =
+		authService
+
+	override suspend fun getBearerAndRefreshToken(): JwtBearerAndRefresh {
+		throw UnsupportedOperationException("Only bearer is available")
+	}
+
+	override suspend fun changeScope(dataOwnerId: String): AuthProvider {
+		throw UnsupportedOperationException("Can't change scope if only Bearer is available")
+	}
+
+	override suspend fun switchGroup(newGroupId: String): AuthProvider {
+		val decodedTokenGroup = kotlin.runCatching {
+			Json.parseToJsonElement(Base64String(bearerToken.split(".")[1]).decode().decodeToString()).jsonObject.getValue("g").jsonPrimitive.also { check (it.isString) }.content
+		}.getOrNull() ?: throw IllegalArgumentException("Failed to parse cardinal JWT $bearerToken")
+		if (decodedTokenGroup != newGroupId) {
+			throw IllegalArgumentException("JWT group $decodedTokenGroup doesn't match the requested group $newGroupId")
+		}
+		return this
+	}
 }
