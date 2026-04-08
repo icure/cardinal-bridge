@@ -1,9 +1,12 @@
 package com.icure.cardinal.bridge.model
 
-import kotlinx.serialization.Serializable
+sealed interface Credentials
 
-@Serializable
-data class Credentials(
+data class BasicCredentials(
 	val username: String,
 	val password: String
-)
+) : Credentials
+
+data class JwtCredentials(
+	val token: String
+) : Credentials

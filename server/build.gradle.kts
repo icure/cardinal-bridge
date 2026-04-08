@@ -7,6 +7,7 @@ group = "com.icure.bridge"
 version = "0.0.1"
 
 kotlin {
+	jvm()
 	macosArm64()
 	linuxX64()
 
@@ -19,6 +20,15 @@ kotlin {
 				implementation(libs.ktor.serializationJson)
 				implementation(libs.cardinal.sdk)
 			}
+		}
+		val nativeMain by creating {
+			dependsOn(commonMain)
+		}
+		val macosArm64Main by getting {
+			dependsOn(nativeMain)
+		}
+		val linuxX64Main by getting {
+			dependsOn(nativeMain)
 		}
 	}
 }

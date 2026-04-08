@@ -1,7 +1,14 @@
 package com.icure.cardinal.bridge.components
 
+import com.icure.cardinal.bridge.model.BasicCredentials
+import com.icure.cardinal.bridge.model.Credentials
+import com.icure.cardinal.bridge.model.JwtCredentials
 import com.icure.cardinal.sdk.CardinalSdk
-import com.icure.cardinal.sdk.auth.UsernameLongToken
+import com.icure.cardinal.sdk.auth.AuthSecretDetails
+import com.icure.cardinal.sdk.auth.AuthSecretProvider
+import com.icure.cardinal.sdk.auth.AuthenticationProcessApi
+import com.icure.cardinal.sdk.auth.UsernamePassword
+import com.icure.cardinal.sdk.model.embed.AuthenticationClass
 import com.icure.cardinal.sdk.crypto.CryptoStrategies
 import com.icure.cardinal.sdk.crypto.KeyPairRecoverer
 import com.icure.cardinal.sdk.crypto.impl.exportSpkiHex
@@ -36,21 +43,19 @@ class CardinalSdkInitializer(
 	private val baseUrl: String,
 ) {
 	@Volatile
-	private var cache = emptyMap<Pair<String, String>, Deferred<CardinalSdk>>()
+	private var cache = emptyMap<Credentials, Deferred<CardinalSdk>>()
 	private val cacheMutex = Mutex()
 
 	/**
-	 * Get a cardinal sdk for [username] and [token].
-	 * If there is already an SDK with that [username] and [token] it is returned (independently of the keys), otherwise
-	 * a new one is created.
+	 * Get a cardinal sdk for the given [credentials].
+	 * If there is already an SDK with those credentials it is returned, otherwise a new one is created.
 	 * Failures are not cached.
 	 */
-	suspend fun getOrInit(username: String, token: String, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
+	suspend fun getOrInit(credentials: Credentials, pkcs8Keys: Map<String, Set<Base64String>> = emptyMap()): CardinalSdk =
 		coroutineScope {
-			val cacheKey = Pair(username, token)
 			var res: CardinalSdk? = null
 			while (res == null) {
-				val existing = cache[cacheKey]
+				val existing = cache[credentials]
 				if (existing != null) {
 					try {
 						res = existing.await()
@@ -61,9 +66,9 @@ class CardinalSdkInitializer(
 				}
 				ensureActive()
 				val jobCreatedByMe = cacheMutex.withLock {
-					if (existing === cache[cacheKey]) {
-						val job = async(start = CoroutineStart.LAZY) { initialize(username, token, pkcs8Keys) }
-						cache = cache + (cacheKey to job)
+					if (existing === cache[credentials]) {
+						val job = async(start = CoroutineStart.LAZY) { initialize(credentials, pkcs8Keys) }
+						cache = cache + (credentials to job)
 						job
 					} else null
 				}
@@ -73,19 +78,27 @@ class CardinalSdkInitializer(
 			res
 		}
 
-
-	/**
-	 * @param username the username of the user to log in.
-	 * @param token a long-lived token for the user.
-	 * @param pkcs8Keys the base64 encoded key of the user (optional) and parents (mandatory) in pkcs8, by data owner id.
-	 */
-	private suspend fun initialize(username: String, token: String, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
+	private suspend fun initialize(credentials: Credentials, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
 		CardinalSdk.initialize(
 			projectId = applicationId,
 			baseUrl = baseUrl,
-			authenticationMethod = AuthenticationMethod.UsingCredentials(
-				UsernameLongToken(username, token)
-			),
+			authenticationMethod = when (credentials) {
+				is BasicCredentials -> AuthenticationMethod.UsingCredentials(
+					UsernamePassword(credentials.username, credentials.password)
+				)
+				is JwtCredentials -> AuthenticationMethod.UsingSecretProvider(
+					loginUsername = null,
+					existingJwt = credentials.token,
+					secretProvider = object : AuthSecretProvider {
+						override suspend fun getSecret(
+							acceptedSecrets: Set<AuthenticationClass>,
+							previousAttempts: List<AuthSecretDetails>,
+							authProcessApi: AuthenticationProcessApi
+						): AuthSecretDetails =
+							throw IllegalStateException("JWT token expired, re-authentication required")
+					}
+				)
+			},
 			baseStorage = VolatileStorageFacade(),
 			options = SdkOptions(
 				cryptoStrategies = object : CryptoStrategies {
