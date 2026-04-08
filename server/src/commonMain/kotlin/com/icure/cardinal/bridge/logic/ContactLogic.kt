@@ -98,7 +98,7 @@ class ContactLogic(private val sdkInitializer: CardinalSdkInitializer) {
 	}
 
 	private suspend fun serviceWithLinks(credentials: Credentials, service: DecryptedService): ServiceWithLinks {
-		// Services share their parent contact's patient link; resolve via the service's contactId
+		// TODO: use the metadata of the service as soon as the new Cardinal SDK is published
 		val patientIds = service.contactId?.let { contactId ->
 			sdk(credentials).contact.getContact(contactId)?.let { contact ->
 				sdk(credentials).contact.decryptPatientIdOf(contact).map { it.entityId }.toSet()
