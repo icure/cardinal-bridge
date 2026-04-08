@@ -10,6 +10,7 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 
+@Suppress("UNCHECKED_CAST")
 private fun makeErrorJson(
 	type: String,
 	vararg args: Pair<String, Any?>

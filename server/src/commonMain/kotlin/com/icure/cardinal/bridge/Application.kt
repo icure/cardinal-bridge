@@ -15,7 +15,7 @@ import io.ktor.server.engine.embeddedServer
 class ServerMain : CliktCommand() {
 	val port: Int by option(help = "Server port").int().default(8080)
 	val applicationId: String? by option(help = "The application id to use for connecting to cardinal")
-	val baseUrl: String by option(help = "The base url of the cardinal backend").default("https://api.icure.cloud")
+	val defaultBaseUrl: String by option(help = "The base url of the cardinal backend to use by default if one was not specified when initializing the session").default("https://api.icure.cloud")
 
 	override fun run() {
 		embeddedServer(
@@ -27,7 +27,7 @@ class ServerMain : CliktCommand() {
 				configureRouting(
 					CardinalSdkInitializer(
 						applicationId,
-						baseUrl
+						defaultBaseUrl
 					)
 				)
 			}

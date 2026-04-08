@@ -3,10 +3,8 @@ package com.icure.cardinal.bridge.components
 import com.icure.cardinal.bridge.model.BasicCredentials
 import com.icure.cardinal.bridge.model.Credentials
 import com.icure.cardinal.bridge.model.JwtCredentials
+import com.icure.cardinal.bridge.model.SessionParams
 import com.icure.cardinal.sdk.CardinalSdk
-import com.icure.cardinal.sdk.auth.AuthSecretDetails
-import com.icure.cardinal.sdk.auth.AuthSecretProvider
-import com.icure.cardinal.sdk.auth.AuthenticationProcessApi
 import com.icure.cardinal.sdk.auth.JwtBearer
 import com.icure.cardinal.sdk.auth.JwtBearerAndRefresh
 import com.icure.cardinal.sdk.auth.UsernamePassword
@@ -45,11 +43,11 @@ import kotlin.uuid.Uuid
  * This class allows instantiating an instance of [CardinalSdk] which will be accessible from a given "sessionId".
  *
  * @param applicationId the applicationId of the database.
- * @param baseUrl the Cardinal backend url to use (api or nightly).
+ * @param defaultBaseUrl the Cardinal backend url to use (api or nightly).
  */
 class CardinalSdkInitializer(
 	private val applicationId: String?,
-	private val baseUrl: String,
+	private val defaultBaseUrl: String,
 ) {
 	@Volatile
 	private var cache = emptyMap<String, CardinalSdk>()
@@ -75,14 +73,14 @@ class CardinalSdkInitializer(
 	}
 
 	/**
-	 * Creates a new Cardinal SDK with the provided [credentials] and [pkcs8Keys], and associates it with the returned
+	 * Creates a new Cardinal SDK with the provided [credentials] and [sessionParams], and associates it with the returned
 	 * session id.
-	 * SDKs are kept indefinitely, even if they became unusable due to expired sessionId, until [destroySession] is
+	 * SDKs are kept indefinitely, even if they became unusable due to expired [credentials], until [destroySession] is
 	 * called.
 	 */
 	@OptIn(ExperimentalUuidApi::class)
-	suspend fun createSession(credentials: Credentials, pkcs8Keys: Map<String, Set<Base64String>>): String {
-		val sdk = initialize(credentials, pkcs8Keys)
+	suspend fun createSession(credentials: Credentials, sessionParams: SessionParams): String {
+		val sdk = initialize(credentials, sessionParams)
 		while (true) {
 			val id = Uuid.random().toHexDashString()
 			cacheMutex.withLock {
@@ -96,10 +94,10 @@ class CardinalSdkInitializer(
 	}
 
 	@OptIn(InternalIcureApi::class)
-	private suspend fun initialize(credentials: Credentials, pkcs8Keys: Map<String, Set<Base64String>>): CardinalSdk =
+	private suspend fun initialize(credentials: Credentials, sessionParams: SessionParams): CardinalSdk =
 		CardinalSdk.initialize(
 			projectId = applicationId,
-			baseUrl = baseUrl,
+			baseUrl = sessionParams.baseUrl ?: defaultBaseUrl,
 			authenticationMethod = when (credentials) {
 				is BasicCredentials -> AuthenticationMethod.UsingCredentials(
 					UsernamePassword(credentials.username, credentials.password)
@@ -117,7 +115,7 @@ class CardinalSdkInitializer(
 						return keysData.associate { recoveryRequest ->
 							val dataOwner = recoveryRequest.dataOwnerDetails.dataOwner
 							val pubSpkiForSha256 = dataOwner.publicKeysWithSha256Spki
-							val keysOfDataOwnerByPubSpki = pkcs8Keys[dataOwner.id]?.associate { pkcs8Base64 ->
+							val keysOfDataOwnerByPubSpki = sessionParams.pkcs8Keys[dataOwner.id]?.associate { pkcs8Base64 ->
 								val pkcs8Bytes = pkcs8Base64.decode()
 								val asRsaSha1 = cryptoPrimitives.rsa.loadKeyPairPkcs8(RsaAlgorithm.RsaEncryptionAlgorithm.OaepWithSha1, pkcs8Bytes)
 								val spki = cryptoPrimitives.rsa.exportSpkiHex(asRsaSha1.public)

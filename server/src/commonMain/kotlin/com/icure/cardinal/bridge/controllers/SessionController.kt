@@ -22,8 +22,7 @@ fun Route.sessionRoutes(
 	route("/session") {
 		post {
 			val credentials = credentials()
-			val keys = call.receive<Map<String, Set<Base64String>>>()
-			val sessionId = sdkInitializer.createSession(credentials, keys)
+			val sessionId = sdkInitializer.createSession(credentials, call.receive())
 			call.respond(HttpStatusCode.OK, JsonPrimitive(sessionId))
 		}
 		delete("/{sessionId}") {
