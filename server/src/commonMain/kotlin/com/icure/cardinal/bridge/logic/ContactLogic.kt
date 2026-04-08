@@ -98,12 +98,7 @@ class ContactLogic(private val sdkInitializer: CardinalSdkInitializer) {
 	}
 
 	private suspend fun serviceWithLinks(credentials: Credentials, service: DecryptedService): ServiceWithLinks {
-		// TODO: use the metadata of the service as soon as the new Cardinal SDK is published
-		val patientIds = service.contactId?.let { contactId ->
-			sdk(credentials).contact.getContact(contactId)?.let { contact ->
-				sdk(credentials).contact.decryptPatientIdOf(contact).map { it.entityId }.toSet()
-			}
-		} ?: emptySet()
+		val patientIds = sdk(credentials).contact.decryptPatientIdOfService(service).map { it.entityId }.toSet()
 		return ServiceWithLinks(service, patientIds)
 	}
 
