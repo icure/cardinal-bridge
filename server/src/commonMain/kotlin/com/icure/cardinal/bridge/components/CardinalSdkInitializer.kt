@@ -1,33 +1,42 @@
 package com.icure.cardinal.bridge.components
 
-import com.icure.cardinal.bridge.model.BasicCredentials
 import com.icure.cardinal.bridge.model.Credentials
 import com.icure.cardinal.bridge.model.JwtCredentials
 import com.icure.cardinal.bridge.model.SessionParams
 import com.icure.cardinal.sdk.CardinalSdk
+import com.icure.cardinal.sdk.api.raw.RawApiConfig
+import com.icure.cardinal.sdk.api.raw.RawPatientApi
+import com.icure.cardinal.sdk.api.raw.impl.RawPatientApiImpl
 import com.icure.cardinal.sdk.auth.JwtBearer
 import com.icure.cardinal.sdk.auth.JwtBearerAndRefresh
-import com.icure.cardinal.sdk.auth.UsernamePassword
 import com.icure.cardinal.sdk.auth.services.AuthProvider
 import com.icure.cardinal.sdk.auth.services.JwtBasedAuthProvider
 import com.icure.cardinal.sdk.auth.services.TokenBasedAuthService
+import com.icure.cardinal.sdk.crypto.AccessControlKeysHeadersProvider
 import com.icure.cardinal.sdk.crypto.CryptoStrategies
 import com.icure.cardinal.sdk.crypto.KeyPairRecoverer
+import com.icure.cardinal.sdk.crypto.impl.NoAccessControlKeysHeadersProvider
 import com.icure.cardinal.sdk.crypto.impl.exportSpkiHex
 import com.icure.cardinal.sdk.model.DataOwnerWithType
 import com.icure.cardinal.sdk.model.embed.AuthenticationClass
 import com.icure.cardinal.sdk.model.extensions.publicKeysWithSha256Spki
 import com.icure.cardinal.sdk.model.specializations.Base64String
 import com.icure.cardinal.sdk.options.AuthenticationMethod
+import com.icure.cardinal.sdk.options.RequestRetryConfiguration
 import com.icure.cardinal.sdk.options.SdkOptions
 import com.icure.cardinal.sdk.storage.impl.VolatileStorageFacade
 import com.icure.cardinal.sdk.utils.RequestStatusException
+import com.icure.cardinal.sdk.utils.Serialization
 import com.icure.cardinal.sdk.utils.decode
 import com.icure.kryptom.crypto.CryptoService
 import com.icure.kryptom.crypto.RsaAlgorithm
 import com.icure.utils.InternalIcureApi
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.bearerAuth
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -35,29 +44,45 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.concurrent.Volatile
+import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-
+@InternalIcureApi
+class RawApis(
+	private val url: String,
+	private val authProvider: AuthProvider,
+	private val accessControlKeysHeadersProvider: AccessControlKeysHeadersProvider?,
+	private val rawApiConfig: RawApiConfig
+) {
+	val patient: RawPatientApi by lazy {
+		RawPatientApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
+	}
+}
 /**
  * This class allows instantiating an instance of [CardinalSdk] which will be accessible from a given "sessionId".
  *
  * @param applicationId the applicationId of the database.
  * @param defaultBaseUrl the Cardinal backend url to use (api or nightly).
  */
+@OptIn(InternalIcureApi::class)
 class CardinalSdkInitializer(
 	private val applicationId: String?,
 	private val defaultBaseUrl: String,
 ) {
 	@Volatile
-	private var cache = emptyMap<String, CardinalSdk>()
+	private var cache = emptyMap<String, Pair<CardinalSdk, RawApis>>()
 	private val cacheMutex = Mutex()
 
 	/**
 	 * Get a cardinal sdk for the given [sessionId] if it exists.
 	 */
 	fun getSdk(sessionId: String): CardinalSdk =
-		requireNotNull(cache[sessionId]) { "No SDK for session $sessionId" }
+		requireNotNull(cache[sessionId]) { "No SDK for session $sessionId" }.first
+
+	@InternalIcureApi
+	fun getRawApis(sessionId: String): RawApis =
+		requireNotNull(cache[sessionId]) { "No SDK for session $sessionId" }.second
 
 	/**
 	 * Dispose of the cardinal sdk associated with the provided [sessionId]
@@ -69,7 +94,7 @@ class CardinalSdkInitializer(
 			}.also {
 				cache = cache - sessionId
 			}
-		}.scope.cancel()
+		}.first.scope.cancel()
 	}
 
 	/**
@@ -80,12 +105,34 @@ class CardinalSdkInitializer(
 	 */
 	@OptIn(ExperimentalUuidApi::class)
 	suspend fun createSession(credentials: Credentials, sessionParams: SessionParams): String {
-		val sdk = initialize(credentials, sessionParams)
+		val authProvider = createAuthProviderForCredentials(credentials)
+		val sdk = initialize(authProvider, sessionParams)
+		val json = Serialization.lenientJson
+		val rawApis = RawApis(
+			sessionParams.baseUrlOrDefault(),
+			authProvider,
+			NoAccessControlKeysHeadersProvider,
+			RawApiConfig(
+				httpClient = HttpClient {
+					install(ContentNegotiation) {
+						json(json = json)
+					}
+					install(HttpTimeout) {
+						requestTimeoutMillis = 5 * 60 * 1_000L
+					}
+				},
+				additionalHeaders = emptyMap(),
+				requestTimeout = 5.minutes,
+				json = json,
+				retryConfiguration = RequestRetryConfiguration()
+			),
+
+		)
 		while (true) {
 			val id = Uuid.random().toHexDashString()
 			cacheMutex.withLock {
 				if (id !in cache) {
-					cache = cache + (id to sdk)
+					cache = cache + (id to Pair(sdk, rawApis))
 					return id
 				}
 				// else try another id
@@ -93,17 +140,17 @@ class CardinalSdkInitializer(
 		}
 	}
 
-	@OptIn(InternalIcureApi::class)
-	private suspend fun initialize(credentials: Credentials, sessionParams: SessionParams): CardinalSdk =
+	private fun createAuthProviderForCredentials(credentials: Credentials): AuthProvider = when (credentials) {
+		is JwtCredentials -> OneJwtAuthProvider(credentials.token)
+	}
+
+	private fun SessionParams.baseUrlOrDefault() = baseUrl ?: defaultBaseUrl
+
+	private suspend fun initialize(authProvider: AuthProvider, sessionParams: SessionParams): CardinalSdk =
 		CardinalSdk.initialize(
 			projectId = applicationId,
-			baseUrl = sessionParams.baseUrl ?: defaultBaseUrl,
-			authenticationMethod = when (credentials) {
-				is BasicCredentials -> AuthenticationMethod.UsingCredentials(
-					UsernamePassword(credentials.username, credentials.password)
-				)
-				is JwtCredentials -> AuthenticationMethod.UsingAuthProvider(OneJwtAuthProvider(credentials.token))
-			},
+			baseUrl = sessionParams.baseUrlOrDefault(),
+			authenticationMethod = AuthenticationMethod.UsingAuthProvider(authProvider),
 			baseStorage = VolatileStorageFacade(),
 			options = SdkOptions(
 				cryptoStrategies = object : CryptoStrategies {

@@ -7,6 +7,8 @@ import com.icure.cardinal.sdk.model.DecryptedPatient
 import com.icure.cardinal.sdk.model.Patient
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import com.icure.cardinal.bridge.model.PatientWithLinks
+import com.icure.cardinal.sdk.model.filter.AbstractFilter
+import com.icure.utils.InternalIcureApi
 
 class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -44,21 +46,12 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 
 	// Filter/Match
 
-	suspend fun matchPatientsBy(sessionId: String, filter: BaseFilterOptions<Patient>): List<String> =
-		sdk(sessionId).patient.matchPatientsBy(filter)
+	@OptIn(InternalIcureApi::class)
+	suspend fun matchPatientsBy(sessionId: String, filter: AbstractFilter<Patient>): List<String> =
+		raw(sessionId).patient.matchPatientsBy(filter).successBody()
 
-	suspend fun matchPatientsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Patient>): List<String> =
-		sdk(sessionId).patient.matchPatientsBySorted(filter)
-
-	suspend fun filterPatientsBy(sessionId: String, filter: BaseFilterOptions<Patient>): List<DecryptedPatient> {
-		val iterator = sdk(sessionId).patient.filterPatientsBy(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
-
-	suspend fun filterPatientsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Patient>): List<DecryptedPatient> {
-		val iterator = sdk(sessionId).patient.filterPatientsBySorted(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
+	suspend fun filterPatientsBy(sessionId: String, filter: AbstractFilter<Patient>): List<DecryptedPatient> =
+		getFromMatches(matchPatientsBy(sessionId, filter), { sdk(sessionId).patient.getPatients(it) })
 
 	// Patient-specific
 
@@ -96,11 +89,8 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	suspend fun undeletePatientByIdWithLinks(sessionId: String, id: String, rev: String): PatientWithLinks =
 		withLinks(sessionId, undeletePatientById(sessionId, id, rev))
 
-	suspend fun filterPatientsByWithLinks(sessionId: String, filter: BaseFilterOptions<Patient>): List<PatientWithLinks> =
+	suspend fun filterPatientsByWithLinks(sessionId: String, filter: AbstractFilter<Patient>): List<PatientWithLinks> =
 		filterPatientsBy(sessionId, filter).map { withLinks(sessionId, it) }
-
-	suspend fun filterPatientsBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<Patient>): List<PatientWithLinks> =
-		filterPatientsBySorted(sessionId, filter).map { withLinks(sessionId, it) }
 
 	suspend fun getPatientResolvingMergesWithLinks(sessionId: String, patientId: String, maxMergeDepth: Int?): PatientWithLinks =
 		withLinks(sessionId, getPatientResolvingMerges(sessionId, patientId, maxMergeDepth))

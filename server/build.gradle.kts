@@ -20,7 +20,8 @@ kotlin {
 			dependencies {
 				implementation(libs.ktor.serverCore)
 				implementation(libs.ktor.serverCio)
-				implementation(libs.ktor.serverContentMegotiation)
+				implementation(libs.ktor.serverContentNegotiation)
+				implementation(libs.ktor.clientContentNegotiation)
 				implementation(libs.ktor.serverStatusPages)
 				implementation(libs.ktor.serializationJson)
 				implementation(libs.clikt)

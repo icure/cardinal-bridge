@@ -81,19 +81,12 @@ fun Route.patientRoutes(logic: PatientLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchPatientsBy(sessionId(), call.receive<BaseFilterOptions<Patient>>()))
+			call.respond(logic.matchPatientsBy(sessionId(), call.receive()))
 		}
 
-		post("/matchBySorted") {
-			call.respond(logic.matchPatientsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Patient>>()))
-		}
 
 		post("/filterBy") {
-			call.respond(logic.filterPatientsBy(sessionId(), call.receive<BaseFilterOptions<Patient>>()))
-		}
-
-		post("/filterBySorted") {
-			call.respond(logic.filterPatientsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Patient>>()))
+			call.respond(logic.filterPatientsBy(sessionId(), call.receive()))
 		}
 
 		// Patient-specific
@@ -139,11 +132,7 @@ fun Route.patientRoutes(logic: PatientLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterPatientsByWithLinks(sessionId(), call.receive<BaseFilterOptions<Patient>>()))
-		}
-
-		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterPatientsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<Patient>>()))
+			call.respond(logic.filterPatientsByWithLinks(sessionId(), call.receive()))
 		}
 
 		get("/resolve/{id}/withLinks") {
