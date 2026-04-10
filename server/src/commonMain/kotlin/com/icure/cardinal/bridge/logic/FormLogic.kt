@@ -1,12 +1,12 @@
 package com.icure.cardinal.bridge.logic
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.DecryptedForm
 import com.icure.cardinal.sdk.model.Form
 import com.icure.cardinal.bridge.model.FormWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
+import com.icure.cardinal.sdk.model.filter.AbstractFilter
+import com.icure.utils.InternalIcureApi
 
 class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -44,21 +44,12 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 
 	// Filter/Match
 
-	suspend fun matchFormsBy(sessionId: String, filter: BaseFilterOptions<Form>): List<String> =
-		sdk(sessionId).form.matchFormsBy(filter)
+	@OptIn(InternalIcureApi::class)
+	suspend fun matchFormsBy(sessionId: String, filter: AbstractFilter<Form>): List<String> =
+		raw(sessionId).form.matchFormsBy(filter).successBody()
 
-	suspend fun matchFormsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Form>): List<String> =
-		sdk(sessionId).form.matchFormsBySorted(filter)
-
-	suspend fun filterFormsBy(sessionId: String, filter: BaseFilterOptions<Form>): List<DecryptedForm> {
-		val iterator = sdk(sessionId).form.filterFormsBy(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
-
-	suspend fun filterFormsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Form>): List<DecryptedForm> {
-		val iterator = sdk(sessionId).form.filterFormsBySorted(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
+	suspend fun filterFormsBy(sessionId: String, filter: AbstractFilter<Form>): List<DecryptedForm> =
+		getFromMatches(matchFormsBy(sessionId, filter)) { sdk(sessionId).form.getForms(it) }
 
 	// Form-specific
 
@@ -93,11 +84,8 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 	suspend fun undeleteFormByIdWithLinks(sessionId: String, id: String, rev: String): FormWithLinks =
 		withLinks(sessionId, undeleteFormById(sessionId, id, rev))
 
-	suspend fun filterFormsByWithLinks(sessionId: String, filter: BaseFilterOptions<Form>): List<FormWithLinks> =
+	suspend fun filterFormsByWithLinks(sessionId: String, filter: AbstractFilter<Form>): List<FormWithLinks> =
 		filterFormsBy(sessionId, filter).map { withLinks(sessionId, it) }
-
-	suspend fun filterFormsBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<Form>): List<FormWithLinks> =
-		filterFormsBySorted(sessionId, filter).map { withLinks(sessionId, it) }
 
 	suspend fun getLatestFormByUniqueIdWithLinks(sessionId: String, uniqueId: String): FormWithLinks =
 		withLinks(sessionId, getLatestFormByUniqueId(sessionId, uniqueId))

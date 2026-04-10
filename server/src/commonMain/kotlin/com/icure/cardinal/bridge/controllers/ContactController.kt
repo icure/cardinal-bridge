@@ -1,12 +1,8 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.ContactLogic
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
-import com.icure.cardinal.sdk.model.Contact
 import com.icure.cardinal.sdk.model.DecryptedContact
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
-import com.icure.cardinal.sdk.model.embed.Service
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
@@ -75,19 +71,11 @@ fun Route.contactRoutes(logic: ContactLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchContactsBy(sessionId(), call.receive<BaseFilterOptions<Contact>>()))
-		}
-
-		post("/matchBySorted") {
-			call.respond(logic.matchContactsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Contact>>()))
+			call.respond(logic.matchContactsBy(sessionId(), call.receive()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterContactsBy(sessionId(), call.receive<BaseFilterOptions<Contact>>()))
-		}
-
-		post("/filterBySorted") {
-			call.respond(logic.filterContactsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Contact>>()))
+			call.respond(logic.filterContactsBy(sessionId(), call.receive()))
 		}
 
 		// Service-specific
@@ -106,19 +94,11 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		}
 
 		post("/service/matchBy") {
-			call.respond(logic.matchServicesBy(sessionId(), call.receive<BaseFilterOptions<Service>>()))
-		}
-
-		post("/service/matchBySorted") {
-			call.respond(logic.matchServicesBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Service>>()))
+			call.respond(logic.matchServicesBy(sessionId(), call.receive()))
 		}
 
 		post("/service/filterBy") {
-			call.respond(logic.filterServicesBy(sessionId(), call.receive<BaseFilterOptions<Service>>()))
-		}
-
-		post("/service/filterBySorted") {
-			call.respond(logic.filterServicesBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Service>>()))
+			call.respond(logic.filterServicesBy(sessionId(), call.receive()))
 		}
 
 		// WithLinks variants
@@ -152,11 +132,7 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterContactsByWithLinks(sessionId(), call.receive<BaseFilterOptions<Contact>>()))
-		}
-
-		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterContactsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<Contact>>()))
+			call.respond(logic.filterContactsByWithLinks(sessionId(), call.receive()))
 		}
 
 		get("/service/{id}/withLinks") {
@@ -169,11 +145,7 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		}
 
 		post("/service/filterBy/withLinks") {
-			call.respond(logic.filterServicesByWithLinks(sessionId(), call.receive<BaseFilterOptions<Service>>()))
-		}
-
-		post("/service/filterBySorted/withLinks") {
-			call.respond(logic.filterServicesBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<Service>>()))
+			call.respond(logic.filterServicesByWithLinks(sessionId(), call.receive()))
 		}
 	}
 }

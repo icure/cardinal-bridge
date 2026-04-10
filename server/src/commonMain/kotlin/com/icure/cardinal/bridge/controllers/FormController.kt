@@ -1,10 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.FormLogic
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.DecryptedForm
-import com.icure.cardinal.sdk.model.Form
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
@@ -74,19 +71,11 @@ fun Route.formRoutes(logic: FormLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchFormsBy(sessionId(), call.receive<BaseFilterOptions<Form>>()))
-		}
-
-		post("/matchBySorted") {
-			call.respond(logic.matchFormsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Form>>()))
+			call.respond(logic.matchFormsBy(sessionId(), call.receive()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterFormsBy(sessionId(), call.receive<BaseFilterOptions<Form>>()))
-		}
-
-		post("/filterBySorted") {
-			call.respond(logic.filterFormsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Form>>()))
+			call.respond(logic.filterFormsBy(sessionId(), call.receive()))
 		}
 
 		// Form-specific
@@ -126,11 +115,7 @@ fun Route.formRoutes(logic: FormLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterFormsByWithLinks(sessionId(), call.receive<BaseFilterOptions<Form>>()))
-		}
-
-		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterFormsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<Form>>()))
+			call.respond(logic.filterFormsByWithLinks(sessionId(), call.receive()))
 		}
 
 		get("/latestByUniqueId/{uniqueId}/withLinks") {

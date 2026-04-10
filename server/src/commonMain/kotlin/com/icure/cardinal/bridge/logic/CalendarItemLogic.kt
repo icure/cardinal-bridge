@@ -1,12 +1,12 @@
 package com.icure.cardinal.bridge.logic
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.CalendarItem
 import com.icure.cardinal.sdk.model.DecryptedCalendarItem
 import com.icure.cardinal.bridge.model.CalendarItemWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
+import com.icure.cardinal.sdk.model.filter.AbstractFilter
+import com.icure.utils.InternalIcureApi
 
 class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -44,21 +44,12 @@ class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkIn
 
 	// Filter/Match
 
-	suspend fun matchCalendarItemsBy(sessionId: String, filter: BaseFilterOptions<CalendarItem>): List<String> =
-		sdk(sessionId).calendarItem.matchCalendarItemsBy(filter)
+	@OptIn(InternalIcureApi::class)
+	suspend fun matchCalendarItemsBy(sessionId: String, filter: AbstractFilter<CalendarItem>): List<String> =
+		raw(sessionId).calendarItem.matchCalendarItemsBy(filter).successBody()
 
-	suspend fun matchCalendarItemsBySorted(sessionId: String, filter: BaseSortableFilterOptions<CalendarItem>): List<String> =
-		sdk(sessionId).calendarItem.matchCalendarItemsBySorted(filter)
-
-	suspend fun filterCalendarItemsBy(sessionId: String, filter: BaseFilterOptions<CalendarItem>): List<DecryptedCalendarItem> {
-		val iterator = sdk(sessionId).calendarItem.filterCalendarItemsBy(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
-
-	suspend fun filterCalendarItemsBySorted(sessionId: String, filter: BaseSortableFilterOptions<CalendarItem>): List<DecryptedCalendarItem> {
-		val iterator = sdk(sessionId).calendarItem.filterCalendarItemsBySorted(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
+	suspend fun filterCalendarItemsBy(sessionId: String, filter: AbstractFilter<CalendarItem>): List<DecryptedCalendarItem> =
+		getFromMatches(matchCalendarItemsBy(sessionId, filter)) { sdk(sessionId).calendarItem.getCalendarItems(it) }
 
 	// CalendarItem-specific
 
@@ -93,11 +84,8 @@ class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkIn
 	suspend fun undeleteCalendarItemByIdWithLinks(sessionId: String, id: String, rev: String): CalendarItemWithLinks =
 		withLinks(sessionId, undeleteCalendarItemById(sessionId, id, rev))
 
-	suspend fun filterCalendarItemsByWithLinks(sessionId: String, filter: BaseFilterOptions<CalendarItem>): List<CalendarItemWithLinks> =
+	suspend fun filterCalendarItemsByWithLinks(sessionId: String, filter: AbstractFilter<CalendarItem>): List<CalendarItemWithLinks> =
 		filterCalendarItemsBy(sessionId, filter).map { withLinks(sessionId, it) }
-
-	suspend fun filterCalendarItemsBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<CalendarItem>): List<CalendarItemWithLinks> =
-		filterCalendarItemsBySorted(sessionId, filter).map { withLinks(sessionId, it) }
 
 	suspend fun bookCalendarItemCheckingAvailabilityWithLinks(sessionId: String, entity: DecryptedCalendarItem): CalendarItemWithLinks =
 		withLinks(sessionId, bookCalendarItemCheckingAvailability(sessionId, entity))

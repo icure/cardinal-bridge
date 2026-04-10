@@ -5,7 +5,19 @@ import com.icure.cardinal.bridge.model.JwtCredentials
 import com.icure.cardinal.bridge.model.SessionParams
 import com.icure.cardinal.sdk.CardinalSdk
 import com.icure.cardinal.sdk.api.raw.RawApiConfig
+import com.icure.cardinal.sdk.api.raw.RawCalendarItemApi
+import com.icure.cardinal.sdk.api.raw.RawContactApi
+import com.icure.cardinal.sdk.api.raw.RawDocumentApi
+import com.icure.cardinal.sdk.api.raw.RawFormApi
+import com.icure.cardinal.sdk.api.raw.RawHealthElementApi
+import com.icure.cardinal.sdk.api.raw.RawMessageApi
 import com.icure.cardinal.sdk.api.raw.RawPatientApi
+import com.icure.cardinal.sdk.api.raw.impl.RawCalendarItemApiImpl
+import com.icure.cardinal.sdk.api.raw.impl.RawContactApiImpl
+import com.icure.cardinal.sdk.api.raw.impl.RawDocumentApiImpl
+import com.icure.cardinal.sdk.api.raw.impl.RawFormApiImpl
+import com.icure.cardinal.sdk.api.raw.impl.RawHealthElementApiImpl
+import com.icure.cardinal.sdk.api.raw.impl.RawMessageApiImpl
 import com.icure.cardinal.sdk.api.raw.impl.RawPatientApiImpl
 import com.icure.cardinal.sdk.auth.JwtBearer
 import com.icure.cardinal.sdk.auth.JwtBearerAndRefresh
@@ -55,6 +67,24 @@ class RawApis(
 	private val accessControlKeysHeadersProvider: AccessControlKeysHeadersProvider?,
 	private val rawApiConfig: RawApiConfig
 ) {
+	val calendarItem: RawCalendarItemApi by lazy {
+		RawCalendarItemApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
+	}
+	val contact: RawContactApi by lazy {
+		RawContactApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
+	}
+	val document: RawDocumentApi by lazy {
+		RawDocumentApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
+	}
+	val form: RawFormApi by lazy {
+		RawFormApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
+	}
+	val healthElement: RawHealthElementApi by lazy {
+		RawHealthElementApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
+	}
+	val message: RawMessageApi by lazy {
+		RawMessageApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
+	}
 	val patient: RawPatientApi by lazy {
 		RawPatientApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
 	}

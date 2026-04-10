@@ -1,10 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.DocumentLogic
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.DecryptedDocument
-import com.icure.cardinal.sdk.model.Document
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
@@ -75,19 +72,11 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchDocumentsBy(sessionId(), call.receive<BaseFilterOptions<Document>>()))
-		}
-
-		post("/matchBySorted") {
-			call.respond(logic.matchDocumentsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Document>>()))
+			call.respond(logic.matchDocumentsBy(sessionId(), call.receive()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterDocumentsBy(sessionId(), call.receive<BaseFilterOptions<Document>>()))
-		}
-
-		post("/filterBySorted") {
-			call.respond(logic.filterDocumentsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Document>>()))
+			call.respond(logic.filterDocumentsBy(sessionId(), call.receive()))
 		}
 
 		// Main attachment
@@ -168,11 +157,7 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterDocumentsByWithLinks(sessionId(), call.receive<BaseFilterOptions<Document>>()))
-		}
-
-		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterDocumentsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<Document>>()))
+			call.respond(logic.filterDocumentsByWithLinks(sessionId(), call.receive()))
 		}
 	}
 }

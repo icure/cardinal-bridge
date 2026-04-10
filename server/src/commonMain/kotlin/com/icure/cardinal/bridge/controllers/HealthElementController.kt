@@ -1,10 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.HealthElementLogic
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.DecryptedHealthElement
-import com.icure.cardinal.sdk.model.HealthElement
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
@@ -74,19 +71,11 @@ fun Route.healthElementRoutes(logic: HealthElementLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchHealthElementsBy(sessionId(), call.receive<BaseFilterOptions<HealthElement>>()))
-		}
-
-		post("/matchBySorted") {
-			call.respond(logic.matchHealthElementsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<HealthElement>>()))
+			call.respond(logic.matchHealthElementsBy(sessionId(), call.receive()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterHealthElementsBy(sessionId(), call.receive<BaseFilterOptions<HealthElement>>()))
-		}
-
-		post("/filterBySorted") {
-			call.respond(logic.filterHealthElementsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<HealthElement>>()))
+			call.respond(logic.filterHealthElementsBy(sessionId(), call.receive()))
 		}
 
 		// WithLinks variants
@@ -120,11 +109,7 @@ fun Route.healthElementRoutes(logic: HealthElementLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterHealthElementsByWithLinks(sessionId(), call.receive<BaseFilterOptions<HealthElement>>()))
-		}
-
-		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterHealthElementsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<HealthElement>>()))
+			call.respond(logic.filterHealthElementsByWithLinks(sessionId(), call.receive()))
 		}
 	}
 }

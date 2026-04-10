@@ -1,9 +1,6 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.CalendarItemLogic
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
-import com.icure.cardinal.sdk.model.CalendarItem
 import com.icure.cardinal.sdk.model.DecryptedCalendarItem
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -74,19 +71,11 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchCalendarItemsBy(sessionId(), call.receive<BaseFilterOptions<CalendarItem>>()))
-		}
-
-		post("/matchBySorted") {
-			call.respond(logic.matchCalendarItemsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<CalendarItem>>()))
+			call.respond(logic.matchCalendarItemsBy(sessionId(), call.receive()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterCalendarItemsBy(sessionId(), call.receive<BaseFilterOptions<CalendarItem>>()))
-		}
-
-		post("/filterBySorted") {
-			call.respond(logic.filterCalendarItemsBySorted(sessionId(), call.receive<BaseSortableFilterOptions<CalendarItem>>()))
+			call.respond(logic.filterCalendarItemsBy(sessionId(), call.receive()))
 		}
 
 		// CalendarItem-specific
@@ -125,11 +114,7 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterCalendarItemsByWithLinks(sessionId(), call.receive<BaseFilterOptions<CalendarItem>>()))
-		}
-
-		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterCalendarItemsBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<CalendarItem>>()))
+			call.respond(logic.filterCalendarItemsByWithLinks(sessionId(), call.receive()))
 		}
 
 		post("/book/withLinks") {

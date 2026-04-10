@@ -1,12 +1,12 @@
 package com.icure.cardinal.bridge.logic
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.DecryptedMessage
 import com.icure.cardinal.sdk.model.Message
 import com.icure.cardinal.bridge.model.MessageWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
+import com.icure.cardinal.sdk.model.filter.AbstractFilter
+import com.icure.utils.InternalIcureApi
 
 class MessageLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -44,21 +44,12 @@ class MessageLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 
 	// Filter/Match
 
-	suspend fun matchMessagesBy(sessionId: String, filter: BaseFilterOptions<Message>): List<String> =
-		sdk(sessionId).message.matchMessagesBy(filter)
+	@OptIn(InternalIcureApi::class)
+	suspend fun matchMessagesBy(sessionId: String, filter: AbstractFilter<Message>): List<String> =
+		raw(sessionId).message.matchMessagesBy(filter).successBody()
 
-	suspend fun matchMessagesBySorted(sessionId: String, filter: BaseSortableFilterOptions<Message>): List<String> =
-		sdk(sessionId).message.matchMessagesBySorted(filter)
-
-	suspend fun filterMessagesBy(sessionId: String, filter: BaseFilterOptions<Message>): List<DecryptedMessage> {
-		val iterator = sdk(sessionId).message.filterMessagesBy(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
-
-	suspend fun filterMessagesBySorted(sessionId: String, filter: BaseSortableFilterOptions<Message>): List<DecryptedMessage> {
-		val iterator = sdk(sessionId).message.filterMessagesBySorted(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
+	suspend fun filterMessagesBy(sessionId: String, filter: AbstractFilter<Message>): List<DecryptedMessage> =
+		getFromMatches(matchMessagesBy(sessionId, filter)) { sdk(sessionId).message.getMessages(it) }
 
 	// Message-specific
 
@@ -95,11 +86,8 @@ class MessageLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	suspend fun undeleteMessageByIdWithLinks(sessionId: String, id: String, rev: String): MessageWithLinks =
 		withLinks(sessionId, undeleteMessageById(sessionId, id, rev))
 
-	suspend fun filterMessagesByWithLinks(sessionId: String, filter: BaseFilterOptions<Message>): List<MessageWithLinks> =
+	suspend fun filterMessagesByWithLinks(sessionId: String, filter: AbstractFilter<Message>): List<MessageWithLinks> =
 		filterMessagesBy(sessionId, filter).map { withLinks(sessionId, it) }
-
-	suspend fun filterMessagesBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<Message>): List<MessageWithLinks> =
-		filterMessagesBySorted(sessionId, filter).map { withLinks(sessionId, it) }
 
 	suspend fun createMessageInTopicWithLinks(sessionId: String, entity: DecryptedMessage): MessageWithLinks =
 		withLinks(sessionId, createMessageInTopic(sessionId, entity))

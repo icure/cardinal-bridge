@@ -1,10 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.MessageLogic
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.DecryptedMessage
-import com.icure.cardinal.sdk.model.Message
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
@@ -74,19 +71,11 @@ fun Route.messageRoutes(logic: MessageLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchMessagesBy(sessionId(), call.receive<BaseFilterOptions<Message>>()))
-		}
-
-		post("/matchBySorted") {
-			call.respond(logic.matchMessagesBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Message>>()))
+			call.respond(logic.matchMessagesBy(sessionId(), call.receive()))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterMessagesBy(sessionId(), call.receive<BaseFilterOptions<Message>>()))
-		}
-
-		post("/filterBySorted") {
-			call.respond(logic.filterMessagesBySorted(sessionId(), call.receive<BaseSortableFilterOptions<Message>>()))
+			call.respond(logic.filterMessagesBy(sessionId(), call.receive()))
 		}
 
 		// Message-specific
@@ -125,11 +114,7 @@ fun Route.messageRoutes(logic: MessageLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterMessagesByWithLinks(sessionId(), call.receive<BaseFilterOptions<Message>>()))
-		}
-
-		post("/filterBySorted/withLinks") {
-			call.respond(logic.filterMessagesBySortedWithLinks(sessionId(), call.receive<BaseSortableFilterOptions<Message>>()))
+			call.respond(logic.filterMessagesByWithLinks(sessionId(), call.receive()))
 		}
 
 		post("/createInTopic/withLinks") {

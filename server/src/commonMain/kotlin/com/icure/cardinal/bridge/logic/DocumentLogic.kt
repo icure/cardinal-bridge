@@ -1,13 +1,13 @@
 package com.icure.cardinal.bridge.logic
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
-import com.icure.cardinal.sdk.filters.BaseFilterOptions
-import com.icure.cardinal.sdk.filters.BaseSortableFilterOptions
 import com.icure.cardinal.sdk.model.DecryptedDocument
 import com.icure.cardinal.sdk.model.Document
 import com.icure.cardinal.sdk.model.EncryptedDocument
 import com.icure.cardinal.bridge.model.DocumentWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
+import com.icure.cardinal.sdk.model.filter.AbstractFilter
+import com.icure.utils.InternalIcureApi
 
 class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -45,21 +45,12 @@ class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitia
 
 	// Filter/Match
 
-	suspend fun matchDocumentsBy(sessionId: String, filter: BaseFilterOptions<Document>): List<String> =
-		sdk(sessionId).document.matchDocumentsBy(filter)
+	@OptIn(InternalIcureApi::class)
+	suspend fun matchDocumentsBy(sessionId: String, filter: AbstractFilter<Document>): List<String> =
+		raw(sessionId).document.matchDocumentsBy(filter).successBody()
 
-	suspend fun matchDocumentsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Document>): List<String> =
-		sdk(sessionId).document.matchDocumentsBySorted(filter)
-
-	suspend fun filterDocumentsBy(sessionId: String, filter: BaseFilterOptions<Document>): List<DecryptedDocument> {
-		val iterator = sdk(sessionId).document.filterDocumentsBy(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
-
-	suspend fun filterDocumentsBySorted(sessionId: String, filter: BaseSortableFilterOptions<Document>): List<DecryptedDocument> {
-		val iterator = sdk(sessionId).document.filterDocumentsBySorted(filter)
-		return buildList { while (iterator.hasNext()) addAll(iterator.next(100)) }
-	}
+	suspend fun filterDocumentsBy(sessionId: String, filter: AbstractFilter<Document>): List<DecryptedDocument> =
+		getFromMatches(matchDocumentsBy(sessionId, filter)) { sdk(sessionId).document.getDocuments(it) }
 
 	// Document-specific (raw attachment operations)
 
@@ -109,9 +100,6 @@ class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitia
 	suspend fun undeleteDocumentByIdWithLinks(sessionId: String, id: String, rev: String): DocumentWithLinks =
 		withLinks(sessionId, undeleteDocumentById(sessionId, id, rev))
 
-	suspend fun filterDocumentsByWithLinks(sessionId: String, filter: BaseFilterOptions<Document>): List<DocumentWithLinks> =
+	suspend fun filterDocumentsByWithLinks(sessionId: String, filter: AbstractFilter<Document>): List<DocumentWithLinks> =
 		filterDocumentsBy(sessionId, filter).map { withLinks(sessionId, it) }
-
-	suspend fun filterDocumentsBySortedWithLinks(sessionId: String, filter: BaseSortableFilterOptions<Document>): List<DocumentWithLinks> =
-		filterDocumentsBySorted(sessionId, filter).map { withLinks(sessionId, it) }
 }
