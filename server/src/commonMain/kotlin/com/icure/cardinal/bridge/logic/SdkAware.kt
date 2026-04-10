@@ -5,6 +5,7 @@ import com.icure.cardinal.sdk.api.raw.RawApiConfig
 import com.icure.cardinal.sdk.auth.services.AuthProvider
 import com.icure.cardinal.sdk.auth.services.AuthService
 import com.icure.cardinal.sdk.model.embed.AuthenticationClass
+import com.icure.cardinal.sdk.utils.RequestStatusException
 import com.icure.utils.InternalIcureApi
 import io.ktor.client.call.body
 import io.ktor.client.plugins.timeout
@@ -14,6 +15,7 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType.Application
 import io.ktor.http.HttpMethod
 import io.ktor.http.appendPathSegments
@@ -31,18 +33,22 @@ abstract class SdkAware(private val sdkInitializer: CardinalSdkInitializer) {
 	@OptIn(InternalIcureApi::class)
 	protected suspend fun rawMatchBy(sessionId: String, filter: JsonElement, vararg scopeSegments: String): List<String> {
 		val rawApis = sdkInitializer.getRawApis(sessionId)
-		return post(rawApis.rawApiConfig, rawApis.authProvider) {
+		val req = post(rawApis.rawApiConfig, rawApis.authProvider) {
 			url {
 				takeFrom(rawApis.url)
 				appendPathSegments("rest", "v2", *scopeSegments, "match")
 			}
 			accept(Application.Json)
 			setBody(TextContent(filter.toString(), Application.Json))
-		}.also {
-			require(it.status.isSuccess()) {
-				"Match request failed"
-			}
-		}.body()
+		}
+		if (req.status.isSuccess()) {
+			return req.body()
+		} else throw RequestStatusException(
+			HttpMethod.Post,
+			"${rawApis.url}/rest/v2/${scopeSegments.joinToString("/")}/match",
+			req.status.value,
+			req.bodyAsText()
+		)
 	}
 
 	@InternalIcureApi
