@@ -1,6 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.MessageLogic
+import com.icure.cardinal.bridge.serialization.FilterSerializers
 import com.icure.cardinal.sdk.model.DecryptedMessage
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -71,11 +72,11 @@ fun Route.messageRoutes(logic: MessageLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchMessagesBy(sessionId(), call.receive()))
+			call.respond(logic.matchMessagesBy(sessionId(), call.receiveJson(FilterSerializers.message)))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterMessagesBy(sessionId(), call.receive()))
+			call.respond(logic.filterMessagesBy(sessionId(), call.receiveJson(FilterSerializers.message)))
 		}
 
 		// Message-specific
@@ -114,7 +115,7 @@ fun Route.messageRoutes(logic: MessageLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterMessagesByWithLinks(sessionId(), call.receive()))
+			call.respond(logic.filterMessagesByWithLinks(sessionId(), call.receiveJson(FilterSerializers.message)))
 		}
 
 		post("/createInTopic/withLinks") {

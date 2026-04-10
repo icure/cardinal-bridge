@@ -1,14 +1,12 @@
 package com.icure.cardinal.bridge.logic
 
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
+import com.icure.cardinal.bridge.model.CalendarItemWithLinks
 import com.icure.cardinal.sdk.model.CalendarItem
 import com.icure.cardinal.sdk.model.DecryptedCalendarItem
-import com.icure.cardinal.bridge.model.CalendarItemWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import com.icure.cardinal.sdk.model.filter.AbstractFilter
 import com.icure.utils.InternalIcureApi
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 
 class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -47,10 +45,10 @@ class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkIn
 	// Filter/Match
 
 	@OptIn(InternalIcureApi::class)
-	suspend fun matchCalendarItemsBy(sessionId: String, filter: JsonElement): List<String> =
-		rawMatchBy(sessionId, filter, "calendarItem")
+	suspend fun matchCalendarItemsBy(sessionId: String, filter: AbstractFilter<CalendarItem>): List<String> =
+		raw(sessionId).calendarItem.matchCalendarItemsBy(filter).successBody()
 
-	suspend fun filterCalendarItemsBy(sessionId: String, filter: JsonElement): List<DecryptedCalendarItem> =
+	suspend fun filterCalendarItemsBy(sessionId: String, filter: AbstractFilter<CalendarItem>): List<DecryptedCalendarItem> =
 		getFromMatches(matchCalendarItemsBy(sessionId, filter)) { sdk(sessionId).calendarItem.getCalendarItems(it) }
 
 	// CalendarItem-specific
@@ -86,7 +84,7 @@ class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkIn
 	suspend fun undeleteCalendarItemByIdWithLinks(sessionId: String, id: String, rev: String): CalendarItemWithLinks =
 		withLinks(sessionId, undeleteCalendarItemById(sessionId, id, rev))
 
-	suspend fun filterCalendarItemsByWithLinks(sessionId: String, filter: JsonElement): List<CalendarItemWithLinks> =
+	suspend fun filterCalendarItemsByWithLinks(sessionId: String, filter: AbstractFilter<CalendarItem>): List<CalendarItemWithLinks> =
 		filterCalendarItemsBy(sessionId, filter).map { withLinks(sessionId, it) }
 
 	suspend fun bookCalendarItemCheckingAvailabilityWithLinks(sessionId: String, entity: DecryptedCalendarItem): CalendarItemWithLinks =

@@ -1,6 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.HealthElementLogic
+import com.icure.cardinal.bridge.serialization.FilterSerializers
 import com.icure.cardinal.sdk.model.DecryptedHealthElement
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -71,11 +72,11 @@ fun Route.healthElementRoutes(logic: HealthElementLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchHealthElementsBy(sessionId(), call.receive()))
+			call.respond(logic.matchHealthElementsBy(sessionId(), call.receiveJson(FilterSerializers.healthElement)))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterHealthElementsBy(sessionId(), call.receive()))
+			call.respond(logic.filterHealthElementsBy(sessionId(), call.receiveJson(FilterSerializers.healthElement)))
 		}
 
 		// WithLinks variants
@@ -109,7 +110,7 @@ fun Route.healthElementRoutes(logic: HealthElementLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterHealthElementsByWithLinks(sessionId(), call.receive()))
+			call.respond(logic.filterHealthElementsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.healthElement)))
 		}
 	}
 }

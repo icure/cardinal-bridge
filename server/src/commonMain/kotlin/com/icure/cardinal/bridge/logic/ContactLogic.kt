@@ -10,7 +10,6 @@ import com.icure.cardinal.bridge.model.ContactWithLinks
 import com.icure.cardinal.bridge.model.ServiceWithLinks
 import com.icure.cardinal.sdk.model.filter.AbstractFilter
 import com.icure.utils.InternalIcureApi
-import kotlinx.serialization.json.JsonElement
 
 class ContactLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -49,10 +48,10 @@ class ContactLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	// Filter/Match
 
 	@OptIn(InternalIcureApi::class)
-	suspend fun matchContactsBy(sessionId: String, filter: JsonElement): List<String> =
-		rawMatchBy(sessionId, filter, "contact")
+	suspend fun matchContactsBy(sessionId: String, filter: AbstractFilter<Contact>): List<String> =
+		raw(sessionId).contact.matchContactsBy(filter).successBody()
 
-	suspend fun filterContactsBy(sessionId: String, filter: JsonElement): List<DecryptedContact> =
+	suspend fun filterContactsBy(sessionId: String, filter: AbstractFilter<Contact>): List<DecryptedContact> =
 		getFromMatches(matchContactsBy(sessionId, filter)) { sdk(sessionId).contact.getContacts(it) }
 
 	// Service-specific
@@ -64,10 +63,10 @@ class ContactLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 		sdk(sessionId).contact.getServices(serviceIds)
 
 	@OptIn(InternalIcureApi::class)
-	suspend fun matchServicesBy(sessionId: String, filter: JsonElement): List<String> =
-		rawMatchBy(sessionId, filter, "contact", "service")
+	suspend fun matchServicesBy(sessionId: String, filter: AbstractFilter<Service>): List<String> =
+		raw(sessionId).contact.matchServicesBy(filter).successBody()
 
-	suspend fun filterServicesBy(sessionId: String, filter: JsonElement): List<DecryptedService> =
+	suspend fun filterServicesBy(sessionId: String, filter: AbstractFilter<Service>): List<DecryptedService> =
 		getFromMatches(matchServicesBy(sessionId, filter)) { sdk(sessionId).contact.getServices(it) }
 
 	// WithLinks
@@ -103,7 +102,7 @@ class ContactLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	suspend fun undeleteContactByIdWithLinks(sessionId: String, id: String, rev: String): ContactWithLinks =
 		withLinks(sessionId, undeleteContactById(sessionId, id, rev))
 
-	suspend fun filterContactsByWithLinks(sessionId: String, filter: JsonElement): List<ContactWithLinks> =
+	suspend fun filterContactsByWithLinks(sessionId: String, filter: AbstractFilter<Contact>): List<ContactWithLinks> =
 		filterContactsBy(sessionId, filter).map { withLinks(sessionId, it) }
 
 	suspend fun getServiceWithLinks(sessionId: String, serviceId: String): ServiceWithLinks? =
@@ -112,6 +111,6 @@ class ContactLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	suspend fun getServicesWithLinks(sessionId: String, serviceIds: List<String>): List<ServiceWithLinks> =
 		getServices(sessionId, serviceIds).map { serviceWithLinks(sessionId, it) }
 
-	suspend fun filterServicesByWithLinks(sessionId: String, filter: JsonElement): List<ServiceWithLinks> =
+	suspend fun filterServicesByWithLinks(sessionId: String, filter: AbstractFilter<Service>): List<ServiceWithLinks> =
 		filterServicesBy(sessionId, filter).map { serviceWithLinks(sessionId, it) }
 }

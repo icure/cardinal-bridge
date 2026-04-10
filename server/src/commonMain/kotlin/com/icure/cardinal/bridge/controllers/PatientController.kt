@@ -1,6 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.PatientLogic
+import com.icure.cardinal.bridge.serialization.FilterSerializers
 import com.icure.cardinal.sdk.model.DecryptedPatient
 import com.icure.cardinal.sdk.model.Patient
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
@@ -79,12 +80,12 @@ fun Route.patientRoutes(logic: PatientLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchPatientsBy(sessionId(), call.receive()))
+			call.respond(logic.matchPatientsBy(sessionId(), call.receiveJson(FilterSerializers.patient)))
 		}
 
 
 		post("/filterBy") {
-			call.respond(logic.filterPatientsBy(sessionId(), call.receive()))
+			call.respond(logic.filterPatientsBy(sessionId(), call.receiveJson(FilterSerializers.patient)))
 		}
 
 		// Patient-specific
@@ -130,7 +131,7 @@ fun Route.patientRoutes(logic: PatientLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterPatientsByWithLinks(sessionId(), call.receive()))
+			call.respond(logic.filterPatientsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.patient)))
 		}
 
 		get("/resolve/{id}/withLinks") {

@@ -7,7 +7,6 @@ import com.icure.cardinal.bridge.model.MessageWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import com.icure.cardinal.sdk.model.filter.AbstractFilter
 import com.icure.utils.InternalIcureApi
-import kotlinx.serialization.json.JsonElement
 
 class MessageLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -46,10 +45,10 @@ class MessageLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	// Filter/Match
 
 	@OptIn(InternalIcureApi::class)
-	suspend fun matchMessagesBy(sessionId: String, filter: JsonElement): List<String> =
-		rawMatchBy(sessionId, filter, "message")
+	suspend fun matchMessagesBy(sessionId: String, filter: AbstractFilter<Message>): List<String> =
+		raw(sessionId).message.matchMessagesBy(filter).successBody()
 
-	suspend fun filterMessagesBy(sessionId: String, filter: JsonElement): List<DecryptedMessage> =
+	suspend fun filterMessagesBy(sessionId: String, filter: AbstractFilter<Message>): List<DecryptedMessage> =
 		getFromMatches(matchMessagesBy(sessionId, filter)) { sdk(sessionId).message.getMessages(it) }
 
 	// Message-specific
@@ -87,7 +86,7 @@ class MessageLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	suspend fun undeleteMessageByIdWithLinks(sessionId: String, id: String, rev: String): MessageWithLinks =
 		withLinks(sessionId, undeleteMessageById(sessionId, id, rev))
 
-	suspend fun filterMessagesByWithLinks(sessionId: String, filter: JsonElement): List<MessageWithLinks> =
+	suspend fun filterMessagesByWithLinks(sessionId: String, filter: AbstractFilter<Message>): List<MessageWithLinks> =
 		filterMessagesBy(sessionId, filter).map { withLinks(sessionId, it) }
 
 	suspend fun createMessageInTopicWithLinks(sessionId: String, entity: DecryptedMessage): MessageWithLinks =

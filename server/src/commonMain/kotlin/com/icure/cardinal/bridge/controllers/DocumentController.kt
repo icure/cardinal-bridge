@@ -1,6 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.DocumentLogic
+import com.icure.cardinal.bridge.serialization.FilterSerializers
 import com.icure.cardinal.sdk.model.DecryptedDocument
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -72,11 +73,11 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchDocumentsBy(sessionId(), call.receive()))
+			call.respond(logic.matchDocumentsBy(sessionId(), call.receiveJson(FilterSerializers.document)))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterDocumentsBy(sessionId(), call.receive()))
+			call.respond(logic.filterDocumentsBy(sessionId(), call.receiveJson(FilterSerializers.document)))
 		}
 
 		// Main attachment
@@ -157,7 +158,7 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterDocumentsByWithLinks(sessionId(), call.receive()))
+			call.respond(logic.filterDocumentsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.document)))
 		}
 	}
 }

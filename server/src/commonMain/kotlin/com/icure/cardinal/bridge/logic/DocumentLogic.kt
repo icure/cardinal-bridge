@@ -8,7 +8,6 @@ import com.icure.cardinal.bridge.model.DocumentWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import com.icure.cardinal.sdk.model.filter.AbstractFilter
 import com.icure.utils.InternalIcureApi
-import kotlinx.serialization.json.JsonElement
 
 class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -47,10 +46,10 @@ class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitia
 	// Filter/Match
 
 	@OptIn(InternalIcureApi::class)
-	suspend fun matchDocumentsBy(sessionId: String, filter: JsonElement): List<String> =
-		rawMatchBy(sessionId, filter, "document")
+	suspend fun matchDocumentsBy(sessionId: String, filter: AbstractFilter<Document>): List<String> =
+		raw(sessionId).document.matchDocumentsBy(filter).successBody()
 
-	suspend fun filterDocumentsBy(sessionId: String, filter: JsonElement): List<DecryptedDocument> =
+	suspend fun filterDocumentsBy(sessionId: String, filter: AbstractFilter<Document>): List<DecryptedDocument> =
 		getFromMatches(matchDocumentsBy(sessionId, filter)) { sdk(sessionId).document.getDocuments(it) }
 
 	// Document-specific (raw attachment operations)
@@ -101,6 +100,6 @@ class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitia
 	suspend fun undeleteDocumentByIdWithLinks(sessionId: String, id: String, rev: String): DocumentWithLinks =
 		withLinks(sessionId, undeleteDocumentById(sessionId, id, rev))
 
-	suspend fun filterDocumentsByWithLinks(sessionId: String, filter: JsonElement): List<DocumentWithLinks> =
+	suspend fun filterDocumentsByWithLinks(sessionId: String, filter: AbstractFilter<Document>): List<DocumentWithLinks> =
 		filterDocumentsBy(sessionId, filter).map { withLinks(sessionId, it) }
 }

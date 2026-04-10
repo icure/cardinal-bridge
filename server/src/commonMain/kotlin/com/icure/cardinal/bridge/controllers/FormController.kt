@@ -1,6 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.FormLogic
+import com.icure.cardinal.bridge.serialization.FilterSerializers
 import com.icure.cardinal.sdk.model.DecryptedForm
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -71,11 +72,11 @@ fun Route.formRoutes(logic: FormLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchFormsBy(sessionId(), call.receive()))
+			call.respond(logic.matchFormsBy(sessionId(), call.receiveJson(FilterSerializers.form)))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterFormsBy(sessionId(), call.receive()))
+			call.respond(logic.filterFormsBy(sessionId(), call.receiveJson(FilterSerializers.form)))
 		}
 
 		// Form-specific
@@ -115,7 +116,7 @@ fun Route.formRoutes(logic: FormLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterFormsByWithLinks(sessionId(), call.receive()))
+			call.respond(logic.filterFormsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.form)))
 		}
 
 		get("/latestByUniqueId/{uniqueId}/withLinks") {

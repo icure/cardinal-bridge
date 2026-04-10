@@ -7,7 +7,6 @@ import com.icure.cardinal.bridge.model.FormWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import com.icure.cardinal.sdk.model.filter.AbstractFilter
 import com.icure.utils.InternalIcureApi
-import kotlinx.serialization.json.JsonElement
 
 class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -46,10 +45,10 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 	// Filter/Match
 
 	@OptIn(InternalIcureApi::class)
-	suspend fun matchFormsBy(sessionId: String, filter: JsonElement): List<String> =
-		rawMatchBy(sessionId, filter, "form")
+	suspend fun matchFormsBy(sessionId: String, filter: AbstractFilter<Form>): List<String> =
+		raw(sessionId).form.matchFormsBy(filter).successBody()
 
-	suspend fun filterFormsBy(sessionId: String, filter: JsonElement): List<DecryptedForm> =
+	suspend fun filterFormsBy(sessionId: String, filter: AbstractFilter<Form>): List<DecryptedForm> =
 		getFromMatches(matchFormsBy(sessionId, filter)) { sdk(sessionId).form.getForms(it) }
 
 	// Form-specific
@@ -85,7 +84,7 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 	suspend fun undeleteFormByIdWithLinks(sessionId: String, id: String, rev: String): FormWithLinks =
 		withLinks(sessionId, undeleteFormById(sessionId, id, rev))
 
-	suspend fun filterFormsByWithLinks(sessionId: String, filter: JsonElement): List<FormWithLinks> =
+	suspend fun filterFormsByWithLinks(sessionId: String, filter: AbstractFilter<Form>): List<FormWithLinks> =
 		filterFormsBy(sessionId, filter).map { withLinks(sessionId, it) }
 
 	suspend fun getLatestFormByUniqueIdWithLinks(sessionId: String, uniqueId: String): FormWithLinks =

@@ -9,9 +9,7 @@ import com.icure.cardinal.bridge.components.CardinalSdkInitializer
 import com.icure.cardinal.bridge.config.configureErrorHandler
 import com.icure.cardinal.bridge.config.configureSerialization
 import com.icure.cardinal.bridge.controllers.configureRouting
-import com.icure.cardinal.sdk.model.Patient
-import com.icure.cardinal.sdk.model.filter.AbstractFilter
-import com.icure.cardinal.sdk.utils.Serialization
+import com.icure.cardinal.bridge.serialization.FilterSerializers
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 
@@ -38,4 +36,7 @@ class ServerMain : CliktCommand() {
 	}
 }
 
-fun main(args: Array<String>) = ServerMain().main(args)
+fun main(args: Array<String>) {
+	println(FilterSerializers.calendarItem)
+	ServerMain().main(args)
+}

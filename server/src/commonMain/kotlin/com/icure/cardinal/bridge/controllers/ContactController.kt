@@ -1,6 +1,7 @@
 package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.ContactLogic
+import com.icure.cardinal.bridge.serialization.FilterSerializers
 import com.icure.cardinal.sdk.model.DecryptedContact
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -71,11 +72,11 @@ fun Route.contactRoutes(logic: ContactLogic) {
 
 		// Filter/Match
 		post("/matchBy") {
-			call.respond(logic.matchContactsBy(sessionId(), call.receive()))
+			call.respond(logic.matchContactsBy(sessionId(), call.receiveJson(FilterSerializers.contact)))
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterContactsBy(sessionId(), call.receive()))
+			call.respond(logic.filterContactsBy(sessionId(), call.receiveJson(FilterSerializers.contact)))
 		}
 
 		// Service-specific
@@ -94,11 +95,11 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		}
 
 		post("/service/matchBy") {
-			call.respond(logic.matchServicesBy(sessionId(), call.receive()))
+			call.respond(logic.matchServicesBy(sessionId(), call.receiveJson(FilterSerializers.service)))
 		}
 
 		post("/service/filterBy") {
-			call.respond(logic.filterServicesBy(sessionId(), call.receive()))
+			call.respond(logic.filterServicesBy(sessionId(), call.receiveJson(FilterSerializers.service)))
 		}
 
 		// WithLinks variants
@@ -132,7 +133,7 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		}
 
 		post("/filterBy/withLinks") {
-			call.respond(logic.filterContactsByWithLinks(sessionId(), call.receive()))
+			call.respond(logic.filterContactsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.contact)))
 		}
 
 		get("/service/{id}/withLinks") {
@@ -145,7 +146,7 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		}
 
 		post("/service/filterBy/withLinks") {
-			call.respond(logic.filterServicesByWithLinks(sessionId(), call.receive()))
+			call.respond(logic.filterServicesByWithLinks(sessionId(), call.receiveJson(FilterSerializers.service)))
 		}
 	}
 }

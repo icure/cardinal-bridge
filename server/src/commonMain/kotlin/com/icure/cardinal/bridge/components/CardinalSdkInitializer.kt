@@ -62,10 +62,10 @@ import kotlin.uuid.Uuid
 
 @InternalIcureApi
 class RawApis(
-	val url: String,
-	val authProvider: AuthProvider,
-	val accessControlKeysHeadersProvider: AccessControlKeysHeadersProvider?,
-	val rawApiConfig: RawApiConfig
+	url: String,
+	authProvider: AuthProvider,
+	accessControlKeysHeadersProvider: AccessControlKeysHeadersProvider?,
+	rawApiConfig: RawApiConfig
 ) {
 	val calendarItem: RawCalendarItemApi by lazy {
 		RawCalendarItemApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
