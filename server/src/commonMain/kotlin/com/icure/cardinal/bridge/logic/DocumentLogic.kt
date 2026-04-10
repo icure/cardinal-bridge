@@ -13,18 +13,21 @@ class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitia
 
 	// CRUD
 
+/*
 	suspend fun createDocument(sessionId: String, entity: DecryptedDocument): DecryptedDocument =
 		sdk(sessionId).document.createDocument(entity)
 
 	suspend fun createDocuments(sessionId: String, entities: List<DecryptedDocument>): List<DecryptedDocument> =
 		sdk(sessionId).document.createDocuments(entities)
+*/
 
-	suspend fun getDocument(sessionId: String, entityId: String): DecryptedDocument? =
-		sdk(sessionId).document.getDocument(entityId)
+	suspend fun getDocument(sessionId: String, entityId: String): Document? =
+		sdk(sessionId).document.tryAndRecover.getDocument(entityId)
 
-	suspend fun getDocuments(sessionId: String, entityIds: List<String>): List<DecryptedDocument> =
-		sdk(sessionId).document.getDocuments(entityIds)
+	suspend fun getDocuments(sessionId: String, entityIds: List<String>): List<Document> =
+		sdk(sessionId).document.tryAndRecover.getDocuments(entityIds)
 
+/*
 	suspend fun modifyDocument(sessionId: String, entity: DecryptedDocument): DecryptedDocument =
 		sdk(sessionId).document.modifyDocument(entity)
 
@@ -42,6 +45,7 @@ class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitia
 
 	suspend fun purgeDocumentById(sessionId: String, id: String, rev: String) =
 		sdk(sessionId).document.purgeDocumentById(id, rev)
+*/
 
 	// Filter/Match
 
@@ -49,41 +53,47 @@ class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitia
 	suspend fun matchDocumentsBy(sessionId: String, filter: AbstractFilter<Document>): List<String> =
 		raw(sessionId).document.matchDocumentsBy(filter).successBody()
 
-	suspend fun filterDocumentsBy(sessionId: String, filter: AbstractFilter<Document>): List<DecryptedDocument> =
-		getFromMatches(matchDocumentsBy(sessionId, filter)) { sdk(sessionId).document.getDocuments(it) }
+	suspend fun filterDocumentsBy(sessionId: String, filter: AbstractFilter<Document>): List<Document> =
+		getFromMatches(matchDocumentsBy(sessionId, filter)) { sdk(sessionId).document.tryAndRecover.getDocuments(it) }
 
 	// Document-specific (raw attachment operations)
 
 	suspend fun getRawMainAttachment(sessionId: String, documentId: String): ByteArray =
 		sdk(sessionId).document.getRawMainAttachment(documentId)
 
+/*
 	suspend fun setRawMainAttachment(sessionId: String, documentId: String, rev: String, utis: List<String>?, attachment: ByteArray, encrypted: Boolean): EncryptedDocument =
 		sdk(sessionId).document.setRawMainAttachment(documentId, rev, utis, attachment, encrypted)
 
 	suspend fun deleteMainAttachment(sessionId: String, entityId: String, rev: String): EncryptedDocument =
 		sdk(sessionId).document.deleteMainAttachment(entityId, rev)
+*/
 
 	suspend fun getRawSecondaryAttachment(sessionId: String, documentId: String, key: String): ByteArray =
 		sdk(sessionId).document.getRawSecondaryAttachment(documentId, key)
 
+/*
 	suspend fun setRawSecondaryAttachment(sessionId: String, documentId: String, key: String, rev: String, utis: List<String>?, attachment: ByteArray, encrypted: Boolean): EncryptedDocument =
 		sdk(sessionId).document.setRawSecondaryAttachment(documentId, key, rev, utis, attachment, encrypted)
 
 	suspend fun deleteSecondaryAttachment(sessionId: String, documentId: String, key: String, rev: String): EncryptedDocument =
 		sdk(sessionId).document.deleteSecondaryAttachment(documentId, key, rev)
+*/
 
 	// WithLinks
 
-	private suspend fun withLinks(sessionId: String, document: DecryptedDocument): DocumentWithLinks {
+	private suspend fun withLinks(sessionId: String, document: Document): DocumentWithLinks {
 		val patientIds = sdk(sessionId).document.decryptOwningEntityIdsOf(document).map { it.entityId }.toSet()
 		return DocumentWithLinks(document, patientIds)
 	}
 
+/*
 	suspend fun createDocumentWithLinks(sessionId: String, entity: DecryptedDocument): DocumentWithLinks =
 		withLinks(sessionId, createDocument(sessionId, entity))
 
 	suspend fun createDocumentsWithLinks(sessionId: String, entities: List<DecryptedDocument>): List<DocumentWithLinks> =
 		createDocuments(sessionId, entities).map { withLinks(sessionId, it) }
+*/
 
 	suspend fun getDocumentWithLinks(sessionId: String, entityId: String): DocumentWithLinks? =
 		getDocument(sessionId, entityId)?.let { withLinks(sessionId, it) }
@@ -91,6 +101,7 @@ class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitia
 	suspend fun getDocumentsWithLinks(sessionId: String, entityIds: List<String>): List<DocumentWithLinks> =
 		getDocuments(sessionId, entityIds).map { withLinks(sessionId, it) }
 
+/*
 	suspend fun modifyDocumentWithLinks(sessionId: String, entity: DecryptedDocument): DocumentWithLinks =
 		withLinks(sessionId, modifyDocument(sessionId, entity))
 
@@ -99,6 +110,7 @@ class DocumentLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitia
 
 	suspend fun undeleteDocumentByIdWithLinks(sessionId: String, id: String, rev: String): DocumentWithLinks =
 		withLinks(sessionId, undeleteDocumentById(sessionId, id, rev))
+*/
 
 	suspend fun filterDocumentsByWithLinks(sessionId: String, filter: AbstractFilter<Document>): List<DocumentWithLinks> =
 		filterDocumentsBy(sessionId, filter).map { withLinks(sessionId, it) }

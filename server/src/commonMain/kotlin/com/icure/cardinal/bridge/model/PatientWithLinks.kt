@@ -1,10 +1,10 @@
 package com.icure.cardinal.bridge.model
 
-import com.icure.cardinal.sdk.model.DecryptedPatient
+import com.icure.cardinal.sdk.model.Patient
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class PatientWithLinks(
-    val patient: DecryptedPatient,
+    val patient: Patient,
     val ownSecretIds: Set<String>
 )

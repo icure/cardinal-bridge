@@ -12,18 +12,21 @@ class HealthElementLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkI
 
 	// CRUD
 
+/*
 	suspend fun createHealthElement(sessionId: String, entity: DecryptedHealthElement): DecryptedHealthElement =
 		sdk(sessionId).healthElement.createHealthElement(entity)
 
 	suspend fun createHealthElements(sessionId: String, entities: List<DecryptedHealthElement>): List<DecryptedHealthElement> =
 		sdk(sessionId).healthElement.createHealthElements(entities)
+*/
 
-	suspend fun getHealthElement(sessionId: String, entityId: String): DecryptedHealthElement? =
-		sdk(sessionId).healthElement.getHealthElement(entityId)
+	suspend fun getHealthElement(sessionId: String, entityId: String): HealthElement? =
+		sdk(sessionId).healthElement.tryAndRecover.getHealthElement(entityId)
 
-	suspend fun getHealthElements(sessionId: String, entityIds: List<String>): List<DecryptedHealthElement> =
-		sdk(sessionId).healthElement.getHealthElements(entityIds)
+	suspend fun getHealthElements(sessionId: String, entityIds: List<String>): List<HealthElement> =
+		sdk(sessionId).healthElement.tryAndRecover.getHealthElements(entityIds)
 
+/*
 	suspend fun modifyHealthElement(sessionId: String, entity: DecryptedHealthElement): DecryptedHealthElement =
 		sdk(sessionId).healthElement.modifyHealthElement(entity)
 
@@ -41,6 +44,7 @@ class HealthElementLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkI
 
 	suspend fun purgeHealthElementById(sessionId: String, id: String, rev: String) =
 		sdk(sessionId).healthElement.purgeHealthElementById(id, rev)
+*/
 
 	// Filter/Match
 
@@ -48,21 +52,23 @@ class HealthElementLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkI
 	suspend fun matchHealthElementsBy(sessionId: String, filter: AbstractFilter<HealthElement>): List<String> =
 		raw(sessionId).healthElement.matchHealthElementsBy(filter).successBody()
 
-	suspend fun filterHealthElementsBy(sessionId: String, filter: AbstractFilter<HealthElement>): List<DecryptedHealthElement> =
-		getFromMatches(matchHealthElementsBy(sessionId, filter)) { sdk(sessionId).healthElement.getHealthElements(it) }
+	suspend fun filterHealthElementsBy(sessionId: String, filter: AbstractFilter<HealthElement>): List<HealthElement> =
+		getFromMatches(matchHealthElementsBy(sessionId, filter)) { sdk(sessionId).healthElement.tryAndRecover.getHealthElements(it) }
 
 	// WithLinks
 
-	private suspend fun withLinks(sessionId: String, he: DecryptedHealthElement): HealthElementWithLinks {
+	private suspend fun withLinks(sessionId: String, he: HealthElement): HealthElementWithLinks {
 		val patientIds = sdk(sessionId).healthElement.decryptPatientIdOf(he).map { it.entityId }.toSet()
 		return HealthElementWithLinks(he, patientIds)
 	}
 
+/*
 	suspend fun createHealthElementWithLinks(sessionId: String, entity: DecryptedHealthElement): HealthElementWithLinks =
 		withLinks(sessionId, createHealthElement(sessionId, entity))
 
 	suspend fun createHealthElementsWithLinks(sessionId: String, entities: List<DecryptedHealthElement>): List<HealthElementWithLinks> =
 		createHealthElements(sessionId, entities).map { withLinks(sessionId, it) }
+*/
 
 	suspend fun getHealthElementWithLinks(sessionId: String, entityId: String): HealthElementWithLinks? =
 		getHealthElement(sessionId, entityId)?.let { withLinks(sessionId, it) }
@@ -70,6 +76,7 @@ class HealthElementLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkI
 	suspend fun getHealthElementsWithLinks(sessionId: String, entityIds: List<String>): List<HealthElementWithLinks> =
 		getHealthElements(sessionId, entityIds).map { withLinks(sessionId, it) }
 
+/*
 	suspend fun modifyHealthElementWithLinks(sessionId: String, entity: DecryptedHealthElement): HealthElementWithLinks =
 		withLinks(sessionId, modifyHealthElement(sessionId, entity))
 
@@ -78,6 +85,7 @@ class HealthElementLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkI
 
 	suspend fun undeleteHealthElementByIdWithLinks(sessionId: String, id: String, rev: String): HealthElementWithLinks =
 		withLinks(sessionId, undeleteHealthElementById(sessionId, id, rev))
+*/
 
 	suspend fun filterHealthElementsByWithLinks(sessionId: String, filter: AbstractFilter<HealthElement>): List<HealthElementWithLinks> =
 		filterHealthElementsBy(sessionId, filter).map { withLinks(sessionId, it) }

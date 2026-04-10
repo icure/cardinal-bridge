@@ -2,6 +2,13 @@ package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.ContactLogic
 import com.icure.cardinal.bridge.serialization.FilterSerializers
+import com.icure.cardinal.bridge.serialization.SerializationConfig
+import com.icure.cardinal.sdk.model.Contact
+import com.icure.cardinal.sdk.model.embed.Service
+import io.ktor.http.ContentType
+import io.ktor.http.content.TextContent
+import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import com.icure.cardinal.sdk.model.DecryptedContact
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -17,6 +24,7 @@ import io.ktor.server.routing.route
 fun Route.contactRoutes(logic: ContactLogic) {
 	route("/contact") {
 		// CRUD
+/*
 		post("/create") {
 			call.respond(logic.createContact(sessionId(), call.receive<DecryptedContact>()))
 		}
@@ -24,21 +32,37 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		post("/createMany") {
 			call.respond(logic.createContacts(sessionId(), call.receive<List<DecryptedContact>>()))
 		}
+*/
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
 			val contact = logic.getContact(sessionId(), id)
 			if (contact != null) {
-				call.respond(contact)
+				call.respond(
+					TextContent(
+						SerializationConfig.serverJson.encodeToString(
+							PolymorphicSerializer(Contact::class),
+							contact
+						),
+						ContentType.Application.Json
+					)
+				)
 			} else {
 				call.respond(HttpStatusCode.NotFound)
 			}
 		}
 
 		post("/getMany") {
-			call.respond(logic.getContacts(sessionId(), call.receive<List<String>>()))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Contact::class)),
+					logic.getContacts(sessionId(), call.receive<List<String>>())
+				),
+				ContentType.Application.Json
+			))
 		}
 
+/*
 		put("/modify") {
 			call.respond(logic.modifyContact(sessionId(), call.receive<DecryptedContact>()))
 		}
@@ -69,6 +93,7 @@ fun Route.contactRoutes(logic: ContactLogic) {
 			logic.purgeContactById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
+*/
 
 		// Filter/Match
 		post("/matchBy") {
@@ -76,7 +101,13 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterContactsBy(sessionId(), call.receiveJson(FilterSerializers.contact)))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Contact::class)),
+					logic.filterContactsBy(sessionId(), call.receiveJson(FilterSerializers.contact))
+				),
+				ContentType.Application.Json
+			))
 		}
 
 		// Service-specific
@@ -84,14 +115,28 @@ fun Route.contactRoutes(logic: ContactLogic) {
 			val id = call.parameters["id"]!!
 			val service = logic.getService(sessionId(), id)
 			if (service != null) {
-				call.respond(service)
+				call.respond(
+					TextContent(
+						SerializationConfig.serverJson.encodeToString(
+							PolymorphicSerializer(Service::class),
+							service
+						),
+						ContentType.Application.Json
+					)
+				)
 			} else {
 				call.respond(HttpStatusCode.NotFound)
 			}
 		}
 
 		post("/service/getMany") {
-			call.respond(logic.getServices(sessionId(), call.receive<List<String>>()))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Service::class)),
+					logic.getServices(sessionId(), call.receive<List<String>>())
+				),
+				ContentType.Application.Json
+			))
 		}
 
 		post("/service/matchBy") {
@@ -99,10 +144,17 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		}
 
 		post("/service/filterBy") {
-			call.respond(logic.filterServicesBy(sessionId(), call.receiveJson(FilterSerializers.service)))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Service::class)),
+					logic.filterServicesBy(sessionId(), call.receiveJson(FilterSerializers.service))
+				),
+				ContentType.Application.Json
+			))
 		}
 
 		// WithLinks variants
+/*
 		post("/create/withLinks") {
 			call.respond(logic.createContactWithLinks(sessionId(), call.receive<DecryptedContact>()))
 		}
@@ -110,6 +162,7 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		post("/createMany/withLinks") {
 			call.respond(logic.createContactsWithLinks(sessionId(), call.receive<List<DecryptedContact>>()))
 		}
+*/
 
 		get("/{id}/withLinks") {
 			val result = logic.getContactWithLinks(sessionId(), call.parameters["id"]!!)
@@ -120,6 +173,7 @@ fun Route.contactRoutes(logic: ContactLogic) {
 			call.respond(logic.getContactsWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
+/*
 		put("/modify/withLinks") {
 			call.respond(logic.modifyContactWithLinks(sessionId(), call.receive<DecryptedContact>()))
 		}
@@ -131,6 +185,7 @@ fun Route.contactRoutes(logic: ContactLogic) {
 		post("/undelete/{id}/{rev}/withLinks") {
 			call.respond(logic.undeleteContactByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
+*/
 
 		post("/filterBy/withLinks") {
 			call.respond(logic.filterContactsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.contact)))

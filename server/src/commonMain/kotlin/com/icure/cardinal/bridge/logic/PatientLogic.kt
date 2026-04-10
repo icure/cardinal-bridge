@@ -12,18 +12,21 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 
 	// CRUD
 
+/*
 	suspend fun createPatient(sessionId: String, patient: DecryptedPatient): DecryptedPatient =
 		sdk(sessionId).patient.createPatient(patient)
 
 	suspend fun createPatients(sessionId: String, patients: List<DecryptedPatient>): List<DecryptedPatient> =
 		sdk(sessionId).patient.createPatients(patients)
+*/
 
-	suspend fun getPatient(sessionId: String, entityId: String): DecryptedPatient? =
-		sdk(sessionId).patient.getPatient(entityId)
+	suspend fun getPatient(sessionId: String, entityId: String): Patient? =
+		sdk(sessionId).patient.tryAndRecover.getPatient(entityId)
 
-	suspend fun getPatients(sessionId: String, patientIds: List<String>): List<DecryptedPatient> =
-		sdk(sessionId).patient.getPatients(patientIds)
+	suspend fun getPatients(sessionId: String, patientIds: List<String>): List<Patient> =
+		sdk(sessionId).patient.tryAndRecover.getPatients(patientIds)
 
+/*
 	suspend fun modifyPatient(sessionId: String, entity: DecryptedPatient): DecryptedPatient =
 		sdk(sessionId).patient.modifyPatient(entity)
 
@@ -41,6 +44,7 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 
 	suspend fun purgePatientById(sessionId: String, id: String, rev: String) =
 		sdk(sessionId).patient.purgePatientById(id, rev)
+*/
 
 	// Filter/Match
 
@@ -48,29 +52,33 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	suspend fun matchPatientsBy(sessionId: String, filter: AbstractFilter<Patient>): List<String> =
 		raw(sessionId).patient.matchPatientsBy(filter).successBody()
 
-	suspend fun filterPatientsBy(sessionId: String, filter: AbstractFilter<Patient>): List<DecryptedPatient> =
-		getFromMatches(matchPatientsBy(sessionId, filter), { sdk(sessionId).patient.getPatients(it) })
+	suspend fun filterPatientsBy(sessionId: String, filter: AbstractFilter<Patient>): List<Patient> =
+		getFromMatches(matchPatientsBy(sessionId, filter)) { sdk(sessionId).patient.tryAndRecover.getPatients(it) }
 
 	// Patient-specific
 
 	suspend fun getPatientResolvingMerges(sessionId: String, patientId: String, maxMergeDepth: Int?): DecryptedPatient =
 		sdk(sessionId).patient.getPatientResolvingMerges(patientId, maxMergeDepth)
 
+/*
 	suspend fun mergePatients(sessionId: String, from: Patient, mergedInto: DecryptedPatient): DecryptedPatient =
 		sdk(sessionId).patient.mergePatients(from, mergedInto)
+*/
 
 	// WithLinks
 
-	private suspend fun withLinks(sessionId: String, patient: DecryptedPatient): PatientWithLinks {
+	private suspend fun withLinks(sessionId: String, patient: Patient): PatientWithLinks {
 		val ownSecretIds = sdk(sessionId).patient.getSecretIdsOf(patient).keys.toSet()
 		return PatientWithLinks(patient, ownSecretIds)
 	}
 
+/*
 	suspend fun createPatientWithLinks(sessionId: String, patient: DecryptedPatient): PatientWithLinks =
 		withLinks(sessionId, createPatient(sessionId, patient))
 
 	suspend fun createPatientsWithLinks(sessionId: String, patients: List<DecryptedPatient>): List<PatientWithLinks> =
 		createPatients(sessionId, patients).map { withLinks(sessionId, it) }
+*/
 
 	suspend fun getPatientWithLinks(sessionId: String, entityId: String): PatientWithLinks? =
 		getPatient(sessionId, entityId)?.let { withLinks(sessionId, it) }
@@ -78,6 +86,7 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	suspend fun getPatientsWithLinks(sessionId: String, patientIds: List<String>): List<PatientWithLinks> =
 		getPatients(sessionId, patientIds).map { withLinks(sessionId, it) }
 
+/*
 	suspend fun modifyPatientWithLinks(sessionId: String, entity: DecryptedPatient): PatientWithLinks =
 		withLinks(sessionId, modifyPatient(sessionId, entity))
 
@@ -86,6 +95,7 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 
 	suspend fun undeletePatientByIdWithLinks(sessionId: String, id: String, rev: String): PatientWithLinks =
 		withLinks(sessionId, undeletePatientById(sessionId, id, rev))
+*/
 
 	suspend fun filterPatientsByWithLinks(sessionId: String, filter: AbstractFilter<Patient>): List<PatientWithLinks> =
 		filterPatientsBy(sessionId, filter).map { withLinks(sessionId, it) }
@@ -93,6 +103,8 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	suspend fun getPatientResolvingMergesWithLinks(sessionId: String, patientId: String, maxMergeDepth: Int?): PatientWithLinks =
 		withLinks(sessionId, getPatientResolvingMerges(sessionId, patientId, maxMergeDepth))
 
+/*
 	suspend fun mergePatientsWithLinks(sessionId: String, from: Patient, mergedInto: DecryptedPatient): PatientWithLinks =
 		withLinks(sessionId, mergePatients(sessionId, from, mergedInto))
+*/
 }

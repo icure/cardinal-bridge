@@ -12,18 +12,21 @@ class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkIn
 
 	// CRUD
 
+/*
 	suspend fun createCalendarItem(sessionId: String, entity: DecryptedCalendarItem): DecryptedCalendarItem =
 		sdk(sessionId).calendarItem.createCalendarItem(entity)
 
 	suspend fun createCalendarItems(sessionId: String, entities: List<DecryptedCalendarItem>): List<DecryptedCalendarItem> =
 		sdk(sessionId).calendarItem.createCalendarItems(entities)
+*/
 
-	suspend fun getCalendarItem(sessionId: String, entityId: String): DecryptedCalendarItem? =
-		sdk(sessionId).calendarItem.getCalendarItem(entityId)
+	suspend fun getCalendarItem(sessionId: String, entityId: String): CalendarItem? =
+		sdk(sessionId).calendarItem.tryAndRecover.getCalendarItem(entityId)
 
-	suspend fun getCalendarItems(sessionId: String, entityIds: List<String>): List<DecryptedCalendarItem> =
-		sdk(sessionId).calendarItem.getCalendarItems(entityIds)
+	suspend fun getCalendarItems(sessionId: String, entityIds: List<String>): List<CalendarItem> =
+		sdk(sessionId).calendarItem.tryAndRecover.getCalendarItems(entityIds)
 
+/*
 	suspend fun modifyCalendarItem(sessionId: String, entity: DecryptedCalendarItem): DecryptedCalendarItem =
 		sdk(sessionId).calendarItem.modifyCalendarItem(entity)
 
@@ -41,6 +44,7 @@ class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkIn
 
 	suspend fun purgeCalendarItemById(sessionId: String, id: String, rev: String) =
 		sdk(sessionId).calendarItem.purgeCalendarItemById(id, rev)
+*/
 
 	// Filter/Match
 
@@ -48,26 +52,30 @@ class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkIn
 	suspend fun matchCalendarItemsBy(sessionId: String, filter: AbstractFilter<CalendarItem>): List<String> =
 		raw(sessionId).calendarItem.matchCalendarItemsBy(filter).successBody()
 
-	suspend fun filterCalendarItemsBy(sessionId: String, filter: AbstractFilter<CalendarItem>): List<DecryptedCalendarItem> =
-		getFromMatches(matchCalendarItemsBy(sessionId, filter)) { sdk(sessionId).calendarItem.getCalendarItems(it) }
+	suspend fun filterCalendarItemsBy(sessionId: String, filter: AbstractFilter<CalendarItem>): List<CalendarItem> =
+		getFromMatches(matchCalendarItemsBy(sessionId, filter)) { sdk(sessionId).calendarItem.tryAndRecover.getCalendarItems(it) }
 
 	// CalendarItem-specific
 
+/*
 	suspend fun bookCalendarItemCheckingAvailability(sessionId: String, entity: DecryptedCalendarItem): DecryptedCalendarItem =
 		sdk(sessionId).calendarItem.bookCalendarItemCheckingAvailability(entity)
+*/
 
 	// WithLinks
 
-	private suspend fun withLinks(sessionId: String, calendarItem: DecryptedCalendarItem): CalendarItemWithLinks {
+	private suspend fun withLinks(sessionId: String, calendarItem: CalendarItem): CalendarItemWithLinks {
 		val patientIds = sdk(sessionId).calendarItem.decryptPatientIdOf(calendarItem).map { it.entityId }.toSet()
 		return CalendarItemWithLinks(calendarItem, patientIds)
 	}
 
+/*
 	suspend fun createCalendarItemWithLinks(sessionId: String, entity: DecryptedCalendarItem): CalendarItemWithLinks =
 		withLinks(sessionId, createCalendarItem(sessionId, entity))
 
 	suspend fun createCalendarItemsWithLinks(sessionId: String, entities: List<DecryptedCalendarItem>): List<CalendarItemWithLinks> =
 		createCalendarItems(sessionId, entities).map { withLinks(sessionId, it) }
+*/
 
 	suspend fun getCalendarItemWithLinks(sessionId: String, entityId: String): CalendarItemWithLinks? =
 		getCalendarItem(sessionId, entityId)?.let { withLinks(sessionId, it) }
@@ -75,6 +83,7 @@ class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkIn
 	suspend fun getCalendarItemsWithLinks(sessionId: String, entityIds: List<String>): List<CalendarItemWithLinks> =
 		getCalendarItems(sessionId, entityIds).map { withLinks(sessionId, it) }
 
+/*
 	suspend fun modifyCalendarItemWithLinks(sessionId: String, entity: DecryptedCalendarItem): CalendarItemWithLinks =
 		withLinks(sessionId, modifyCalendarItem(sessionId, entity))
 
@@ -83,10 +92,13 @@ class CalendarItemLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkIn
 
 	suspend fun undeleteCalendarItemByIdWithLinks(sessionId: String, id: String, rev: String): CalendarItemWithLinks =
 		withLinks(sessionId, undeleteCalendarItemById(sessionId, id, rev))
+*/
 
 	suspend fun filterCalendarItemsByWithLinks(sessionId: String, filter: AbstractFilter<CalendarItem>): List<CalendarItemWithLinks> =
 		filterCalendarItemsBy(sessionId, filter).map { withLinks(sessionId, it) }
 
+/*
 	suspend fun bookCalendarItemCheckingAvailabilityWithLinks(sessionId: String, entity: DecryptedCalendarItem): CalendarItemWithLinks =
 		withLinks(sessionId, bookCalendarItemCheckingAvailability(sessionId, entity))
+*/
 }

@@ -12,18 +12,21 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 
 	// CRUD
 
+/*
 	suspend fun createForm(sessionId: String, entity: DecryptedForm): DecryptedForm =
 		sdk(sessionId).form.createForm(entity)
 
 	suspend fun createForms(sessionId: String, entities: List<DecryptedForm>): List<DecryptedForm> =
 		sdk(sessionId).form.createForms(entities)
+*/
 
-	suspend fun getForm(sessionId: String, entityId: String): DecryptedForm? =
-		sdk(sessionId).form.getForm(entityId)
+	suspend fun getForm(sessionId: String, entityId: String): Form? =
+		sdk(sessionId).form.tryAndRecover.getForm(entityId)
 
-	suspend fun getForms(sessionId: String, entityIds: List<String>): List<DecryptedForm> =
-		sdk(sessionId).form.getForms(entityIds)
+	suspend fun getForms(sessionId: String, entityIds: List<String>): List<Form> =
+		sdk(sessionId).form.tryAndRecover.getForms(entityIds)
 
+/*
 	suspend fun modifyForm(sessionId: String, entity: DecryptedForm): DecryptedForm =
 		sdk(sessionId).form.modifyForm(entity)
 
@@ -41,6 +44,7 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 
 	suspend fun purgeFormById(sessionId: String, id: String, rev: String) =
 		sdk(sessionId).form.purgeFormById(id, rev)
+*/
 
 	// Filter/Match
 
@@ -48,8 +52,8 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 	suspend fun matchFormsBy(sessionId: String, filter: AbstractFilter<Form>): List<String> =
 		raw(sessionId).form.matchFormsBy(filter).successBody()
 
-	suspend fun filterFormsBy(sessionId: String, filter: AbstractFilter<Form>): List<DecryptedForm> =
-		getFromMatches(matchFormsBy(sessionId, filter)) { sdk(sessionId).form.getForms(it) }
+	suspend fun filterFormsBy(sessionId: String, filter: AbstractFilter<Form>): List<Form> =
+		getFromMatches(matchFormsBy(sessionId, filter)) { sdk(sessionId).form.tryAndRecover.getForms(it) }
 
 	// Form-specific
 
@@ -58,16 +62,18 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 
 	// WithLinks
 
-	private suspend fun withLinks(sessionId: String, form: DecryptedForm): FormWithLinks {
+	private suspend fun withLinks(sessionId: String, form: Form): FormWithLinks {
 		val patientIds = sdk(sessionId).form.decryptPatientIdOf(form).map { it.entityId }.toSet()
 		return FormWithLinks(form, patientIds)
 	}
 
+/*
 	suspend fun createFormWithLinks(sessionId: String, entity: DecryptedForm): FormWithLinks =
 		withLinks(sessionId, createForm(sessionId, entity))
 
 	suspend fun createFormsWithLinks(sessionId: String, entities: List<DecryptedForm>): List<FormWithLinks> =
 		createForms(sessionId, entities).map { withLinks(sessionId, it) }
+*/
 
 	suspend fun getFormWithLinks(sessionId: String, entityId: String): FormWithLinks? =
 		getForm(sessionId, entityId)?.let { withLinks(sessionId, it) }
@@ -75,6 +81,7 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 	suspend fun getFormsWithLinks(sessionId: String, entityIds: List<String>): List<FormWithLinks> =
 		getForms(sessionId, entityIds).map { withLinks(sessionId, it) }
 
+/*
 	suspend fun modifyFormWithLinks(sessionId: String, entity: DecryptedForm): FormWithLinks =
 		withLinks(sessionId, modifyForm(sessionId, entity))
 
@@ -83,6 +90,7 @@ class FormLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitialize
 
 	suspend fun undeleteFormByIdWithLinks(sessionId: String, id: String, rev: String): FormWithLinks =
 		withLinks(sessionId, undeleteFormById(sessionId, id, rev))
+*/
 
 	suspend fun filterFormsByWithLinks(sessionId: String, filter: AbstractFilter<Form>): List<FormWithLinks> =
 		filterFormsBy(sessionId, filter).map { withLinks(sessionId, it) }

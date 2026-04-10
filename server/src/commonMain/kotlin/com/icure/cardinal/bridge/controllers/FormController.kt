@@ -2,6 +2,12 @@ package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.FormLogic
 import com.icure.cardinal.bridge.serialization.FilterSerializers
+import com.icure.cardinal.bridge.serialization.SerializationConfig
+import com.icure.cardinal.sdk.model.Form
+import io.ktor.http.ContentType
+import io.ktor.http.content.TextContent
+import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import com.icure.cardinal.sdk.model.DecryptedForm
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -17,6 +23,7 @@ import io.ktor.server.routing.route
 fun Route.formRoutes(logic: FormLogic) {
 	route("/form") {
 		// CRUD
+/*
 		post("/create") {
 			call.respond(logic.createForm(sessionId(), call.receive<DecryptedForm>()))
 		}
@@ -24,21 +31,37 @@ fun Route.formRoutes(logic: FormLogic) {
 		post("/createMany") {
 			call.respond(logic.createForms(sessionId(), call.receive<List<DecryptedForm>>()))
 		}
+*/
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
 			val form = logic.getForm(sessionId(), id)
 			if (form != null) {
-				call.respond(form)
+				call.respond(
+					TextContent(
+						SerializationConfig.serverJson.encodeToString(
+							PolymorphicSerializer(Form::class),
+							form
+						),
+						ContentType.Application.Json
+					)
+				)
 			} else {
 				call.respond(HttpStatusCode.NotFound)
 			}
 		}
 
 		post("/getMany") {
-			call.respond(logic.getForms(sessionId(), call.receive<List<String>>()))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Form::class)),
+					logic.getForms(sessionId(), call.receive<List<String>>())
+				),
+				ContentType.Application.Json
+			))
 		}
 
+/*
 		put("/modify") {
 			call.respond(logic.modifyForm(sessionId(), call.receive<DecryptedForm>()))
 		}
@@ -69,6 +92,7 @@ fun Route.formRoutes(logic: FormLogic) {
 			logic.purgeFormById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
+*/
 
 		// Filter/Match
 		post("/matchBy") {
@@ -76,7 +100,13 @@ fun Route.formRoutes(logic: FormLogic) {
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterFormsBy(sessionId(), call.receiveJson(FilterSerializers.form)))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Form::class)),
+					logic.filterFormsBy(sessionId(), call.receiveJson(FilterSerializers.form))
+				),
+				ContentType.Application.Json
+			))
 		}
 
 		// Form-specific
@@ -86,6 +116,7 @@ fun Route.formRoutes(logic: FormLogic) {
 		}
 
 		// WithLinks variants
+/*
 		post("/create/withLinks") {
 			call.respond(logic.createFormWithLinks(sessionId(), call.receive<DecryptedForm>()))
 		}
@@ -93,6 +124,7 @@ fun Route.formRoutes(logic: FormLogic) {
 		post("/createMany/withLinks") {
 			call.respond(logic.createFormsWithLinks(sessionId(), call.receive<List<DecryptedForm>>()))
 		}
+*/
 
 		get("/{id}/withLinks") {
 			val result = logic.getFormWithLinks(sessionId(), call.parameters["id"]!!)
@@ -103,6 +135,7 @@ fun Route.formRoutes(logic: FormLogic) {
 			call.respond(logic.getFormsWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
+/*
 		put("/modify/withLinks") {
 			call.respond(logic.modifyFormWithLinks(sessionId(), call.receive<DecryptedForm>()))
 		}
@@ -114,6 +147,7 @@ fun Route.formRoutes(logic: FormLogic) {
 		post("/undelete/{id}/{rev}/withLinks") {
 			call.respond(logic.undeleteFormByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
+*/
 
 		post("/filterBy/withLinks") {
 			call.respond(logic.filterFormsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.form)))

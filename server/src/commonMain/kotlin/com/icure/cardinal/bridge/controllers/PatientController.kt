@@ -2,6 +2,11 @@ package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.PatientLogic
 import com.icure.cardinal.bridge.serialization.FilterSerializers
+import com.icure.cardinal.bridge.serialization.SerializationConfig
+import io.ktor.http.ContentType
+import io.ktor.http.content.TextContent
+import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import com.icure.cardinal.sdk.model.DecryptedPatient
 import com.icure.cardinal.sdk.model.Patient
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
@@ -25,6 +30,7 @@ data class MergePatientsRequest(
 fun Route.patientRoutes(logic: PatientLogic) {
 	route("/patient") {
 		// CRUD
+/*
 		post("/create") {
 			call.respond(logic.createPatient(sessionId(), call.receive<DecryptedPatient>()))
 		}
@@ -32,21 +38,37 @@ fun Route.patientRoutes(logic: PatientLogic) {
 		post("/createMany") {
 			call.respond(logic.createPatients(sessionId(), call.receive<List<DecryptedPatient>>()))
 		}
+*/
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
 			val patient = logic.getPatient(sessionId(), id)
 			if (patient != null) {
-				call.respond(patient)
+				call.respond(
+					TextContent(
+						SerializationConfig.serverJson.encodeToString(
+							PolymorphicSerializer(Patient::class),
+							patient
+						),
+						ContentType.Application.Json
+					)
+				)
 			} else {
 				call.respond(HttpStatusCode.NotFound)
 			}
 		}
 
 		post("/getMany") {
-			call.respond(logic.getPatients(sessionId(), call.receive<List<String>>()))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Patient::class)),
+					logic.getPatients(sessionId(), call.receive<List<String>>())
+				),
+				ContentType.Application.Json
+			))
 		}
 
+/*
 		put("/modify") {
 			call.respond(logic.modifyPatient(sessionId(), call.receive<DecryptedPatient>()))
 		}
@@ -77,6 +99,7 @@ fun Route.patientRoutes(logic: PatientLogic) {
 			logic.purgePatientById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
+*/
 
 		// Filter/Match
 		post("/matchBy") {
@@ -85,7 +108,13 @@ fun Route.patientRoutes(logic: PatientLogic) {
 
 
 		post("/filterBy") {
-			call.respond(logic.filterPatientsBy(sessionId(), call.receiveJson(FilterSerializers.patient)))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Patient::class)),
+					logic.filterPatientsBy(sessionId(), call.receiveJson(FilterSerializers.patient))
+				),
+				ContentType.Application.Json
+			))
 		}
 
 		// Patient-specific
@@ -95,12 +124,15 @@ fun Route.patientRoutes(logic: PatientLogic) {
 			call.respond(logic.getPatientResolvingMerges(sessionId(), id, maxMergeDepth))
 		}
 
+/*
 		post("/merge") {
 			val request = call.receive<MergePatientsRequest>()
 			call.respond(logic.mergePatients(sessionId(), request.from, request.mergedInto))
 		}
+*/
 
 		// WithLinks variants
+/*
 		post("/create/withLinks") {
 			call.respond(logic.createPatientWithLinks(sessionId(), call.receive<DecryptedPatient>()))
 		}
@@ -108,6 +140,7 @@ fun Route.patientRoutes(logic: PatientLogic) {
 		post("/createMany/withLinks") {
 			call.respond(logic.createPatientsWithLinks(sessionId(), call.receive<List<DecryptedPatient>>()))
 		}
+*/
 
 		get("/{id}/withLinks") {
 			val result = logic.getPatientWithLinks(sessionId(), call.parameters["id"]!!)
@@ -118,6 +151,7 @@ fun Route.patientRoutes(logic: PatientLogic) {
 			call.respond(logic.getPatientsWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
+/*
 		put("/modify/withLinks") {
 			call.respond(logic.modifyPatientWithLinks(sessionId(), call.receive<DecryptedPatient>()))
 		}
@@ -129,6 +163,7 @@ fun Route.patientRoutes(logic: PatientLogic) {
 		post("/undelete/{id}/{rev}/withLinks") {
 			call.respond(logic.undeletePatientByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
+*/
 
 		post("/filterBy/withLinks") {
 			call.respond(logic.filterPatientsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.patient)))
@@ -139,9 +174,11 @@ fun Route.patientRoutes(logic: PatientLogic) {
 			call.respond(logic.getPatientResolvingMergesWithLinks(sessionId(), call.parameters["id"]!!, maxMergeDepth))
 		}
 
+/*
 		post("/merge/withLinks") {
 			val request = call.receive<MergePatientsRequest>()
 			call.respond(logic.mergePatientsWithLinks(sessionId(), request.from, request.mergedInto))
 		}
+*/
 	}
 }

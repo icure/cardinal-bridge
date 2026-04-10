@@ -2,6 +2,12 @@ package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.MessageLogic
 import com.icure.cardinal.bridge.serialization.FilterSerializers
+import com.icure.cardinal.bridge.serialization.SerializationConfig
+import com.icure.cardinal.sdk.model.Message
+import io.ktor.http.ContentType
+import io.ktor.http.content.TextContent
+import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import com.icure.cardinal.sdk.model.DecryptedMessage
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -17,6 +23,7 @@ import io.ktor.server.routing.route
 fun Route.messageRoutes(logic: MessageLogic) {
 	route("/message") {
 		// CRUD
+/*
 		post("/create") {
 			call.respond(logic.createMessage(sessionId(), call.receive<DecryptedMessage>()))
 		}
@@ -24,21 +31,37 @@ fun Route.messageRoutes(logic: MessageLogic) {
 		post("/createMany") {
 			call.respond(logic.createMessages(sessionId(), call.receive<List<DecryptedMessage>>()))
 		}
+*/
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
 			val message = logic.getMessage(sessionId(), id)
 			if (message != null) {
-				call.respond(message)
+				call.respond(
+					TextContent(
+						SerializationConfig.serverJson.encodeToString(
+							PolymorphicSerializer(Message::class),
+							message
+						),
+						ContentType.Application.Json
+					)
+				)
 			} else {
 				call.respond(HttpStatusCode.NotFound)
 			}
 		}
 
 		post("/getMany") {
-			call.respond(logic.getMessages(sessionId(), call.receive<List<String>>()))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Message::class)),
+					logic.getMessages(sessionId(), call.receive<List<String>>())
+				),
+				ContentType.Application.Json
+			))
 		}
 
+/*
 		put("/modify") {
 			call.respond(logic.modifyMessage(sessionId(), call.receive<DecryptedMessage>()))
 		}
@@ -69,6 +92,7 @@ fun Route.messageRoutes(logic: MessageLogic) {
 			logic.purgeMessageById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
+*/
 
 		// Filter/Match
 		post("/matchBy") {
@@ -76,15 +100,24 @@ fun Route.messageRoutes(logic: MessageLogic) {
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterMessagesBy(sessionId(), call.receiveJson(FilterSerializers.message)))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Message::class)),
+					logic.filterMessagesBy(sessionId(), call.receiveJson(FilterSerializers.message))
+				),
+				ContentType.Application.Json
+			))
 		}
 
 		// Message-specific
+/*
 		post("/createInTopic") {
 			call.respond(logic.createMessageInTopic(sessionId(), call.receive<DecryptedMessage>()))
 		}
+*/
 
 		// WithLinks variants
+/*
 		post("/create/withLinks") {
 			call.respond(logic.createMessageWithLinks(sessionId(), call.receive<DecryptedMessage>()))
 		}
@@ -92,6 +125,7 @@ fun Route.messageRoutes(logic: MessageLogic) {
 		post("/createMany/withLinks") {
 			call.respond(logic.createMessagesWithLinks(sessionId(), call.receive<List<DecryptedMessage>>()))
 		}
+*/
 
 		get("/{id}/withLinks") {
 			val result = logic.getMessageWithLinks(sessionId(), call.parameters["id"]!!)
@@ -102,6 +136,7 @@ fun Route.messageRoutes(logic: MessageLogic) {
 			call.respond(logic.getMessagesWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
+/*
 		put("/modify/withLinks") {
 			call.respond(logic.modifyMessageWithLinks(sessionId(), call.receive<DecryptedMessage>()))
 		}
@@ -113,13 +148,16 @@ fun Route.messageRoutes(logic: MessageLogic) {
 		post("/undelete/{id}/{rev}/withLinks") {
 			call.respond(logic.undeleteMessageByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
+*/
 
 		post("/filterBy/withLinks") {
 			call.respond(logic.filterMessagesByWithLinks(sessionId(), call.receiveJson(FilterSerializers.message)))
 		}
 
+/*
 		post("/createInTopic/withLinks") {
 			call.respond(logic.createMessageInTopicWithLinks(sessionId(), call.receive<DecryptedMessage>()))
 		}
+*/
 	}
 }

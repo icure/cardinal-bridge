@@ -2,6 +2,12 @@ package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.DocumentLogic
 import com.icure.cardinal.bridge.serialization.FilterSerializers
+import com.icure.cardinal.bridge.serialization.SerializationConfig
+import com.icure.cardinal.sdk.model.Document
+import io.ktor.http.ContentType
+import io.ktor.http.content.TextContent
+import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import com.icure.cardinal.sdk.model.DecryptedDocument
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import io.ktor.http.HttpStatusCode
@@ -18,6 +24,7 @@ import io.ktor.server.routing.route
 fun Route.documentRoutes(logic: DocumentLogic) {
 	route("/document") {
 		// CRUD
+/*
 		post("/create") {
 			call.respond(logic.createDocument(sessionId(), call.receive<DecryptedDocument>()))
 		}
@@ -25,21 +32,37 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 		post("/createMany") {
 			call.respond(logic.createDocuments(sessionId(), call.receive<List<DecryptedDocument>>()))
 		}
+*/
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
 			val document = logic.getDocument(sessionId(), id)
 			if (document != null) {
-				call.respond(document)
+				call.respond(
+					TextContent(
+						SerializationConfig.serverJson.encodeToString(
+							PolymorphicSerializer(Document::class),
+							document
+						),
+						ContentType.Application.Json
+					)
+				)
 			} else {
 				call.respond(HttpStatusCode.NotFound)
 			}
 		}
 
 		post("/getMany") {
-			call.respond(logic.getDocuments(sessionId(), call.receive<List<String>>()))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Document::class)),
+					logic.getDocuments(sessionId(), call.receive<List<String>>())
+				),
+				ContentType.Application.Json
+			))
 		}
 
+/*
 		put("/modify") {
 			call.respond(logic.modifyDocument(sessionId(), call.receive<DecryptedDocument>()))
 		}
@@ -70,6 +93,7 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 			logic.purgeDocumentById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
+*/
 
 		// Filter/Match
 		post("/matchBy") {
@@ -77,7 +101,13 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterDocumentsBy(sessionId(), call.receiveJson(FilterSerializers.document)))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(Document::class)),
+					logic.filterDocumentsBy(sessionId(), call.receiveJson(FilterSerializers.document))
+				),
+				ContentType.Application.Json
+			))
 		}
 
 		// Main attachment
@@ -87,6 +117,7 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 			call.respondBytes(result)
 		}
 
+/*
 		put("/mainAttachment/{documentId}/{rev}") {
 			val documentId = call.parameters["documentId"]!!
 			val rev = call.parameters["rev"]!!
@@ -101,6 +132,7 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 			val rev = call.parameters["rev"]!!
 			call.respond(logic.deleteMainAttachment(sessionId(), documentId, rev))
 		}
+*/
 
 		// Secondary attachment
 		get("/secondaryAttachment/{documentId}/{key}") {
@@ -110,6 +142,7 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 			call.respondBytes(result)
 		}
 
+/*
 		put("/secondaryAttachment/{documentId}/{key}/{rev}") {
 			val documentId = call.parameters["documentId"]!!
 			val key = call.parameters["key"]!!
@@ -126,8 +159,10 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 			val rev = call.parameters["rev"]!!
 			call.respond(logic.deleteSecondaryAttachment(sessionId(), documentId, key, rev))
 		}
+*/
 
 		// WithLinks variants
+/*
 		post("/create/withLinks") {
 			call.respond(logic.createDocumentWithLinks(sessionId(), call.receive<DecryptedDocument>()))
 		}
@@ -135,6 +170,7 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 		post("/createMany/withLinks") {
 			call.respond(logic.createDocumentsWithLinks(sessionId(), call.receive<List<DecryptedDocument>>()))
 		}
+*/
 
 		get("/{id}/withLinks") {
 			val result = logic.getDocumentWithLinks(sessionId(), call.parameters["id"]!!)
@@ -145,6 +181,7 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 			call.respond(logic.getDocumentsWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
+/*
 		put("/modify/withLinks") {
 			call.respond(logic.modifyDocumentWithLinks(sessionId(), call.receive<DecryptedDocument>()))
 		}
@@ -156,6 +193,7 @@ fun Route.documentRoutes(logic: DocumentLogic) {
 		post("/undelete/{id}/{rev}/withLinks") {
 			call.respond(logic.undeleteDocumentByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
+*/
 
 		post("/filterBy/withLinks") {
 			call.respond(logic.filterDocumentsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.document)))

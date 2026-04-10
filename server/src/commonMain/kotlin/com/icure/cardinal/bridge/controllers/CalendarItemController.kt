@@ -2,9 +2,13 @@ package com.icure.cardinal.bridge.controllers
 
 import com.icure.cardinal.bridge.logic.CalendarItemLogic
 import com.icure.cardinal.bridge.serialization.FilterSerializers
+import com.icure.cardinal.bridge.serialization.SerializationConfig
+import com.icure.cardinal.sdk.model.CalendarItem
 import com.icure.cardinal.sdk.model.DecryptedCalendarItem
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -13,10 +17,13 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
+import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.builtins.ListSerializer
 
 fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 	route("/calendarItem") {
 		// CRUD
+/*
 		post("/create") {
 			call.respond(logic.createCalendarItem(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
@@ -24,21 +31,37 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 		post("/createMany") {
 			call.respond(logic.createCalendarItems(sessionId(), call.receive<List<DecryptedCalendarItem>>()))
 		}
+*/
 
 		get("/{id}") {
 			val id = call.parameters["id"]!!
 			val calendarItem = logic.getCalendarItem(sessionId(), id)
 			if (calendarItem != null) {
-				call.respond(calendarItem)
+				call.respond(
+					TextContent(
+						SerializationConfig.serverJson.encodeToString(
+							PolymorphicSerializer(CalendarItem::class),
+							calendarItem
+						),
+						ContentType.Application.Json
+					)
+				)
 			} else {
 				call.respond(HttpStatusCode.NotFound)
 			}
 		}
 
 		post("/getMany") {
-			call.respond(logic.getCalendarItems(sessionId(), call.receive<List<String>>()))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(CalendarItem::class)),
+					logic.getCalendarItems(sessionId(), call.receive<List<String>>())
+				),
+				ContentType.Application.Json
+			))
 		}
 
+/*
 		put("/modify") {
 			call.respond(logic.modifyCalendarItem(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
@@ -69,6 +92,7 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 			logic.purgeCalendarItemById(sessionId(), id, rev)
 			call.respond(HttpStatusCode.NoContent)
 		}
+*/
 
 		// Filter/Match
 		post("/matchBy") {
@@ -76,15 +100,24 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 		}
 
 		post("/filterBy") {
-			call.respond(logic.filterCalendarItemsBy(sessionId(), call.receiveJson(FilterSerializers.calendarItem)))
+			call.respond(TextContent(
+				SerializationConfig.serverJson.encodeToString(
+					ListSerializer(PolymorphicSerializer(CalendarItem::class)),
+					logic.filterCalendarItemsBy(sessionId(), call.receiveJson(FilterSerializers.calendarItem))
+				),
+				ContentType.Application.Json
+			))
 		}
 
 		// CalendarItem-specific
+/*
 		post("/book") {
 			call.respond(logic.bookCalendarItemCheckingAvailability(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
+*/
 
 		// WithLinks variants
+/*
 		post("/create/withLinks") {
 			call.respond(logic.createCalendarItemWithLinks(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
@@ -92,6 +125,7 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 		post("/createMany/withLinks") {
 			call.respond(logic.createCalendarItemsWithLinks(sessionId(), call.receive<List<DecryptedCalendarItem>>()))
 		}
+*/
 
 		get("/{id}/withLinks") {
 			val result = logic.getCalendarItemWithLinks(sessionId(), call.parameters["id"]!!)
@@ -102,6 +136,7 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 			call.respond(logic.getCalendarItemsWithLinks(sessionId(), call.receive<List<String>>()))
 		}
 
+/*
 		put("/modify/withLinks") {
 			call.respond(logic.modifyCalendarItemWithLinks(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
@@ -113,13 +148,16 @@ fun Route.calendarItemRoutes(logic: CalendarItemLogic) {
 		post("/undelete/{id}/{rev}/withLinks") {
 			call.respond(logic.undeleteCalendarItemByIdWithLinks(sessionId(), call.parameters["id"]!!, call.parameters["rev"]!!))
 		}
+*/
 
 		post("/filterBy/withLinks") {
 			call.respond(logic.filterCalendarItemsByWithLinks(sessionId(), call.receiveJson(FilterSerializers.calendarItem)))
 		}
 
+/*
 		post("/book/withLinks") {
 			call.respond(logic.bookCalendarItemCheckingAvailabilityWithLinks(sessionId(), call.receive<DecryptedCalendarItem>()))
 		}
+*/
 	}
 }
