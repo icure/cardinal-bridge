@@ -62,7 +62,7 @@ class MessageLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	private suspend fun withLinks(sessionId: String, message: DecryptedMessage): MessageWithLinks {
 		val sdk = sdk(sessionId)
 		val patientIds = sdk.message.decryptPatientIdOf(message).map { it.entityId }.toSet()
-		val ownSecretIds = sdk.message.getSecretIdsOf(message).values.flatMap { refs -> refs.map { it.entityId } }.toSet()
+		val ownSecretIds = sdk.message.getSecretIdsOf(message).keys.toSet()
 		return MessageWithLinks(message, patientIds, ownSecretIds)
 	}
 

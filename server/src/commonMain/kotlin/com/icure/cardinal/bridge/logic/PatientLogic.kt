@@ -63,7 +63,7 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	// WithLinks
 
 	private suspend fun withLinks(sessionId: String, patient: DecryptedPatient): PatientWithLinks {
-		val ownSecretIds = sdk(sessionId).patient.getSecretIdsOf(patient).values.flatMap { refs -> refs.map { it.entityId } }.toSet()
+		val ownSecretIds = sdk(sessionId).patient.getSecretIdsOf(patient).keys.toSet()
 		return PatientWithLinks(patient, ownSecretIds)
 	}
 
