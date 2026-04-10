@@ -7,6 +7,7 @@ import com.icure.cardinal.bridge.model.HealthElementWithLinks
 import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import com.icure.cardinal.sdk.model.filter.AbstractFilter
 import com.icure.utils.InternalIcureApi
+import kotlinx.serialization.json.JsonElement
 
 class HealthElementLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -45,10 +46,10 @@ class HealthElementLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkI
 	// Filter/Match
 
 	@OptIn(InternalIcureApi::class)
-	suspend fun matchHealthElementsBy(sessionId: String, filter: AbstractFilter<HealthElement>): List<String> =
-		raw(sessionId).healthElement.matchHealthElementsBy(filter).successBody()
+	suspend fun matchHealthElementsBy(sessionId: String, filter: JsonElement): List<String> =
+		rawMatchBy(sessionId, filter, "helement")
 
-	suspend fun filterHealthElementsBy(sessionId: String, filter: AbstractFilter<HealthElement>): List<DecryptedHealthElement> =
+	suspend fun filterHealthElementsBy(sessionId: String, filter: JsonElement): List<DecryptedHealthElement> =
 		getFromMatches(matchHealthElementsBy(sessionId, filter)) { sdk(sessionId).healthElement.getHealthElements(it) }
 
 	// WithLinks
@@ -79,6 +80,6 @@ class HealthElementLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkI
 	suspend fun undeleteHealthElementByIdWithLinks(sessionId: String, id: String, rev: String): HealthElementWithLinks =
 		withLinks(sessionId, undeleteHealthElementById(sessionId, id, rev))
 
-	suspend fun filterHealthElementsByWithLinks(sessionId: String, filter: AbstractFilter<HealthElement>): List<HealthElementWithLinks> =
+	suspend fun filterHealthElementsByWithLinks(sessionId: String, filter: JsonElement): List<HealthElementWithLinks> =
 		filterHealthElementsBy(sessionId, filter).map { withLinks(sessionId, it) }
 }

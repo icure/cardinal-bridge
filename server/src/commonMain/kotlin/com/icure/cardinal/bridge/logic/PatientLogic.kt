@@ -7,6 +7,7 @@ import com.icure.cardinal.sdk.model.StoredDocumentIdentifier
 import com.icure.cardinal.bridge.model.PatientWithLinks
 import com.icure.cardinal.sdk.model.filter.AbstractFilter
 import com.icure.utils.InternalIcureApi
+import kotlinx.serialization.json.JsonElement
 
 class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitializer) {
 
@@ -45,10 +46,10 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	// Filter/Match
 
 	@OptIn(InternalIcureApi::class)
-	suspend fun matchPatientsBy(sessionId: String, filter: AbstractFilter<Patient>): List<String> =
-		raw(sessionId).patient.matchPatientsBy(filter).successBody()
+	suspend fun matchPatientsBy(sessionId: String, filter: JsonElement): List<String> =
+		rawMatchBy(sessionId, filter, "patient")
 
-	suspend fun filterPatientsBy(sessionId: String, filter: AbstractFilter<Patient>): List<DecryptedPatient> =
+	suspend fun filterPatientsBy(sessionId: String, filter: JsonElement): List<DecryptedPatient> =
 		getFromMatches(matchPatientsBy(sessionId, filter), { sdk(sessionId).patient.getPatients(it) })
 
 	// Patient-specific
@@ -87,7 +88,7 @@ class PatientLogic(sdkInitializer: CardinalSdkInitializer) : SdkAware(sdkInitial
 	suspend fun undeletePatientByIdWithLinks(sessionId: String, id: String, rev: String): PatientWithLinks =
 		withLinks(sessionId, undeletePatientById(sessionId, id, rev))
 
-	suspend fun filterPatientsByWithLinks(sessionId: String, filter: AbstractFilter<Patient>): List<PatientWithLinks> =
+	suspend fun filterPatientsByWithLinks(sessionId: String, filter: JsonElement): List<PatientWithLinks> =
 		filterPatientsBy(sessionId, filter).map { withLinks(sessionId, it) }
 
 	suspend fun getPatientResolvingMergesWithLinks(sessionId: String, patientId: String, maxMergeDepth: Int?): PatientWithLinks =
