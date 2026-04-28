@@ -43,11 +43,12 @@ import com.icure.cardinal.sdk.utils.decode
 import com.icure.kryptom.crypto.CryptoService
 import com.icure.kryptom.crypto.RsaAlgorithm
 import com.icure.utils.InternalIcureApi
-import io.ktor.client.HttpClient
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
@@ -89,6 +90,7 @@ class RawApis(
 		RawPatientApiImpl(url, authProvider, accessControlKeysHeadersProvider, rawApiConfig)
 	}
 }
+
 /**
  * This class allows instantiating an instance of [CardinalSdk] which will be accessible from a given "sessionId".
  *
@@ -110,6 +112,9 @@ class CardinalSdkInitializer(
 		}
 		install(HttpTimeout) {
 			requestTimeoutMillis = 5 * 60 * 1_000L
+		}
+		defaultRequest {
+			header("Cardinal-Legacy-Support", "1")
 		}
 	}
 
@@ -158,7 +163,7 @@ class CardinalSdkInitializer(
 				retryConfiguration = RequestRetryConfiguration()
 			),
 
-		)
+			)
 		while (true) {
 			val id = Uuid.random().toHexDashString()
 			cacheMutex.withLock {
@@ -193,16 +198,23 @@ class CardinalSdkInitializer(
 						return keysData.associate { recoveryRequest ->
 							val dataOwner = recoveryRequest.dataOwnerDetails.dataOwner
 							val pubSpkiForSha256 = dataOwner.publicKeysWithSha256Spki
-							val keysOfDataOwnerByPubSpki = sessionParams.pkcs8Keys[dataOwner.id]?.associate { pkcs8Base64 ->
-								val pkcs8Bytes = pkcs8Base64.decode()
-								val asRsaSha1 = cryptoPrimitives.rsa.loadKeyPairPkcs8(RsaAlgorithm.RsaEncryptionAlgorithm.OaepWithSha1, pkcs8Bytes)
-								val spki = cryptoPrimitives.rsa.exportSpkiHex(asRsaSha1.public)
-								if (spki in pubSpkiForSha256) {
-									spki to cryptoPrimitives.rsa.loadKeyPairPkcs8(RsaAlgorithm.RsaEncryptionAlgorithm.OaepWithSha256, pkcs8Bytes)
-								} else {
-									spki to asRsaSha1
-								}
-							}.orEmpty()
+							val keysOfDataOwnerByPubSpki =
+								sessionParams.pkcs8Keys[dataOwner.id]?.associate { pkcs8Base64 ->
+									val pkcs8Bytes = pkcs8Base64.decode()
+									val asRsaSha1 = cryptoPrimitives.rsa.loadKeyPairPkcs8(
+										RsaAlgorithm.RsaEncryptionAlgorithm.OaepWithSha1,
+										pkcs8Bytes
+									)
+									val spki = cryptoPrimitives.rsa.exportSpkiHex(asRsaSha1.public)
+									if (spki in pubSpkiForSha256) {
+										spki to cryptoPrimitives.rsa.loadKeyPairPkcs8(
+											RsaAlgorithm.RsaEncryptionAlgorithm.OaepWithSha256,
+											pkcs8Bytes
+										)
+									} else {
+										spki to asRsaSha1
+									}
+								}.orEmpty()
 							dataOwner.id to CryptoStrategies.RecoveredKeyData(
 								recoveredKeys = keysOfDataOwnerByPubSpki.mapKeys {
 									it.key.fingerprintV1()
@@ -215,7 +227,8 @@ class CardinalSdkInitializer(
 					override suspend fun generateNewKeyForDataOwner(
 						self: DataOwnerWithType,
 						cryptoPrimitives: CryptoService
-					): CryptoStrategies.KeyGenerationRequestResult = CryptoStrategies.KeyGenerationRequestResult.ParentDelegator
+					): CryptoStrategies.KeyGenerationRequestResult =
+						CryptoStrategies.KeyGenerationRequestResult.ParentDelegator
 				},
 				createTransferKeys = false,
 				useHierarchicalDataOwners = true,
@@ -261,7 +274,9 @@ private class OneJwtAuthProvider(
 
 	override suspend fun switchGroup(newGroupId: String): AuthProvider {
 		val decodedTokenGroup = kotlin.runCatching {
-			Json.parseToJsonElement(Base64String(bearerToken.split(".")[1]).decode().decodeToString()).jsonObject.getValue("g").jsonPrimitive.also { check (it.isString) }.content
+			Json.parseToJsonElement(
+				Base64String(bearerToken.split(".")[1]).decode().decodeToString()
+			).jsonObject.getValue("g").jsonPrimitive.also { check(it.isString) }.content
 		}.getOrNull() ?: throw IllegalArgumentException("Failed to parse cardinal JWT $bearerToken")
 		if (decodedTokenGroup != newGroupId) {
 			throw IllegalArgumentException("JWT group $decodedTokenGroup doesn't match the requested group $newGroupId")
