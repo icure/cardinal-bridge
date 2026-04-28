@@ -103,6 +103,15 @@ class CardinalSdkInitializer(
 	@Volatile
 	private var cache = emptyMap<String, Pair<CardinalSdk, RawApis>>()
 	private val cacheMutex = Mutex()
+	private val json = Serialization.lenientJson
+	private val client = buildHttpClient {
+		install(ContentNegotiation) {
+			json(json = json)
+		}
+		install(HttpTimeout) {
+			requestTimeoutMillis = 5 * 60 * 1_000L
+		}
+	}
 
 	/**
 	 * Get a cardinal sdk for the given [sessionId] if it exists.
@@ -137,20 +146,12 @@ class CardinalSdkInitializer(
 	suspend fun createSession(credentials: Credentials, sessionParams: SessionParams): String {
 		val authProvider = createAuthProviderForCredentials(credentials)
 		val sdk = initialize(authProvider, sessionParams)
-		val json = Serialization.lenientJson
 		val rawApis = RawApis(
 			sessionParams.baseUrlOrDefault(),
 			authProvider,
 			NoAccessControlKeysHeadersProvider,
 			RawApiConfig(
-				httpClient = HttpClient {
-					install(ContentNegotiation) {
-						json(json = json)
-					}
-					install(HttpTimeout) {
-						requestTimeoutMillis = 5 * 60 * 1_000L
-					}
-				},
+				httpClient = client,
 				additionalHeaders = emptyMap(),
 				requestTimeout = 5.minutes,
 				json = json,
@@ -218,7 +219,7 @@ class CardinalSdkInitializer(
 				},
 				createTransferKeys = false,
 				useHierarchicalDataOwners = true,
-				lenientJson = true
+				httpClient = client,
 			)
 		)
 }

@@ -1,7 +1,5 @@
 package com.icure.cardinal.bridge.serialization
 
-import com.icure.cardinal.bridge.logic.HealthElementLogic
-import com.icure.cardinal.bridge.logic.MessageLogic
 import com.icure.cardinal.sdk.model.CalendarItem
 import com.icure.cardinal.sdk.model.Contact
 import com.icure.cardinal.sdk.model.Document

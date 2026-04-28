@@ -6,12 +6,17 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import com.icure.cardinal.bridge.components.CardinalSdkInitializer
+import com.icure.cardinal.bridge.components.buildHttpClient
 import com.icure.cardinal.bridge.config.configureErrorHandler
 import com.icure.cardinal.bridge.config.configureSerialization
 import com.icure.cardinal.bridge.controllers.configureRouting
 import com.icure.cardinal.bridge.serialization.FilterSerializers
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import kotlinx.coroutines.runBlocking
 
 class ServerMain : CliktCommand() {
 	val port: Int by option(help = "Server port").int().default(8080)
@@ -37,6 +42,5 @@ class ServerMain : CliktCommand() {
 }
 
 fun main(args: Array<String>) {
-	println(FilterSerializers.calendarItem)
 	ServerMain().main(args)
 }
