@@ -37,19 +37,5 @@ class ServerMain : CliktCommand() {
 }
 
 fun main(args: Array<String>) {
-	SerializationConfig.serverJson.decodeFromString(FilterSerializers.patient, """
-		{
-		  "${'$'}type": "ComplementFilter",
-		  "superSet": {
-		    "${'$'}type": "PatientByHcPartyFilter",
-		    "healthcarePartyId": "fa8e398f-0430-47e1-b736-aa78adc99d00"
-		  },
-		  "subSet": {
-		    "${'$'}type": "PatientByHcPartyGenderEducationProfession",
-		    "healthcarePartyId": "fa8e398f-0430-47e1-b736-aa78adc99d00",
-		    "gender": "male"
-		  }
-		}
-	""".trimIndent()).also { println(it) }
-//	ServerMain().main(args)
+	ServerMain().main(args)
 }
