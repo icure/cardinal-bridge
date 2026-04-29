@@ -2,13 +2,10 @@ package com.icure.cardinal.bridge.config
 
 import com.icure.cardinal.sdk.utils.RequestStatusException
 import io.ktor.http.HttpStatusCode
-import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
-import io.ktor.server.response.respondText
 
 @Suppress("UNCHECKED_CAST")
 private fun makeErrorJson(

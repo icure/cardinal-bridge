@@ -105,7 +105,7 @@ class CardinalSdkInitializer(
 	@Volatile
 	private var cache = emptyMap<String, Pair<CardinalSdk, RawApis>>()
 	private val cacheMutex = Mutex()
-	private val json = Serialization.lenientJson
+	private val json = Serialization.json
 	private val client = buildHttpClient {
 		install(ContentNegotiation) {
 			json(json = json)
