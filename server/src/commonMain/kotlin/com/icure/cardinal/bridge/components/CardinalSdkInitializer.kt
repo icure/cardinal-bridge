@@ -19,6 +19,7 @@ import com.icure.cardinal.sdk.api.raw.impl.RawFormApiImpl
 import com.icure.cardinal.sdk.api.raw.impl.RawHealthElementApiImpl
 import com.icure.cardinal.sdk.api.raw.impl.RawMessageApiImpl
 import com.icure.cardinal.sdk.api.raw.impl.RawPatientApiImpl
+import com.icure.cardinal.sdk.api.raw.impl.RawUserApiImpl
 import com.icure.cardinal.sdk.auth.JwtBearer
 import com.icure.cardinal.sdk.auth.JwtBearerAndRefresh
 import com.icure.cardinal.sdk.auth.services.AuthProvider
@@ -150,20 +151,21 @@ class CardinalSdkInitializer(
 	@OptIn(ExperimentalUuidApi::class)
 	suspend fun createSession(credentials: Credentials, sessionParams: SessionParams): String {
 		val authProvider = createAuthProviderForCredentials(credentials)
-		val sdk = initialize(authProvider, sessionParams)
+		val rawApiConfig = RawApiConfig(
+			httpClient = client,
+			additionalHeaders = emptyMap(),
+			requestTimeout = 5.minutes,
+			json = json,
+			retryConfiguration = RequestRetryConfiguration()
+		)
 		val rawApis = RawApis(
 			sessionParams.baseUrlOrDefault(),
 			authProvider,
 			NoAccessControlKeysHeadersProvider,
-			RawApiConfig(
-				httpClient = client,
-				additionalHeaders = emptyMap(),
-				requestTimeout = 5.minutes,
-				json = json,
-				retryConfiguration = RequestRetryConfiguration()
-			),
-
+			rawApiConfig,
 			)
+		val groupId = RawUserApiImpl(sessionParams.baseUrlOrDefault(), authProvider, rawApiConfig).getCurrentUser(true).successBody().groupId ?: throw IllegalArgumentException("No groupId in token")
+		val sdk = initialize(authProvider, sessionParams, groupId)
 		while (true) {
 			val id = Uuid.random().toHexDashString()
 			cacheMutex.withLock {
@@ -182,13 +184,16 @@ class CardinalSdkInitializer(
 
 	private fun SessionParams.baseUrlOrDefault() = baseUrl ?: defaultBaseUrl
 
-	private suspend fun initialize(authProvider: AuthProvider, sessionParams: SessionParams): CardinalSdk =
+	private suspend fun initialize(authProvider: AuthProvider, sessionParams: SessionParams, groupId: String): CardinalSdk =
 		CardinalSdk.initialize(
 			projectId = applicationId,
 			baseUrl = sessionParams.baseUrlOrDefault(),
 			authenticationMethod = AuthenticationMethod.UsingAuthProvider(authProvider),
 			baseStorage = VolatileStorageFacade(),
 			options = SdkOptions(
+				groupSelector = { userGroups ->
+					userGroups.find { it.groupId == groupId }?.groupId ?: throw IllegalArgumentException("No groupId in groups available from token")
+				},
 				cryptoStrategies = object : CryptoStrategies {
 					override suspend fun recoverAndVerifySelfHierarchyKeys(
 						keysData: List<CryptoStrategies.KeyDataRecoveryRequest>,
