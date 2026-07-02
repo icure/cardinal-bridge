@@ -1,3 +1,17 @@
+> [!NOTE]
+> If you are not sure what this is about you are probably looking for https://github.com/icure/cardinal-sdk instead.
+
+> [!CAUTION]
+> Due to use of ignoreUnknownKeys this project is safe only for reading data. 
+> If the need to modify data arises we should first replace the ignoreUnknownKeys with proper decrypted json patching.
+> 
+> Known entity that would have problems with that are:
+> - `Measure`:
+>   - Deprecated `min` and `max` in favor of `referenceRanges`
+>   - Some encrypted measures use non-existing fields
+> 
+> Additional info in internal jira ticket CSM-797.
+
 This is a Kotlin Multiplatform project targeting Server.
 
 * [/server](./server/src/main/kotlin) is for the Ktor server application.
