@@ -238,6 +238,7 @@ class CardinalSdkInitializer(
 				createTransferKeys = false,
 				useHierarchicalDataOwners = true,
 				httpClient = client,
+				httpClientJson = json,
 			)
 		)
 }
