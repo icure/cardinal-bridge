@@ -35,6 +35,9 @@ import com.icure.cardinal.sdk.model.embed.AuthenticationClass
 import com.icure.cardinal.sdk.model.extensions.publicKeysWithSha256Spki
 import com.icure.cardinal.sdk.model.specializations.Base64String
 import com.icure.cardinal.sdk.options.AuthenticationMethod
+import com.icure.cardinal.sdk.options.EntityListDecodingStrategy
+import com.icure.cardinal.sdk.options.MalformedEntity
+import com.icure.cardinal.sdk.options.MalformedEntityHandler
 import com.icure.cardinal.sdk.options.RequestRetryConfiguration
 import com.icure.cardinal.sdk.options.SdkOptions
 import com.icure.cardinal.sdk.storage.impl.VolatileStorageFacade
@@ -239,6 +242,19 @@ class CardinalSdkInitializer(
 				useHierarchicalDataOwners = true,
 				httpClient = client,
 				httpClientJson = json,
+				entityListDecodingStrategy = EntityListDecodingStrategy.DiscardMalformed { entity ->
+					// kotlinx.serialization messages may end with an excerpt of the raw json, and the query may contain
+					// search terms: strip both to avoid logging personal data.
+					val reason = entity.error.message
+						?.substringBefore("\nJSON input:")
+						?.replace('\n', ' ')
+						?.trim()
+					val requestPath = entity.requestUrl.substringBefore('?')
+					println(
+						"MalformedEntity - Discarded ${entity.entityType} with id ${entity.entityId ?: "<unknown>"} " +
+								"returned by $requestPath: ${entity.error::class.simpleName}: $reason"
+					)
+				}
 			)
 		)
 }
