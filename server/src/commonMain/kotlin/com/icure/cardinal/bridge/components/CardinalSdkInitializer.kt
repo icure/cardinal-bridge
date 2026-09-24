@@ -100,12 +100,33 @@ class RawApis(
  *
  * @param applicationId the applicationId of the database.
  * @param defaultBaseUrl the Cardinal backend url to use (api or nightly).
+ * @param entityListDecodingStrategy how the sdk decodes lists of entities returned by the backend.
  */
 @OptIn(InternalIcureApi::class)
 class CardinalSdkInitializer(
 	private val applicationId: String?,
 	private val defaultBaseUrl: String,
+	private val entityListDecodingStrategy: EntityListDecodingStrategy = logAndDiscardMalformed,
 ) {
+	companion object {
+		/**
+		 * Drops the entities that can't be deserialized and logs them with type, id, request path and error reason.
+		 */
+		val logAndDiscardMalformed = EntityListDecodingStrategy.DiscardMalformed { entity ->
+			// kotlinx.serialization messages may end with an excerpt of the raw json, and the query may contain
+			// search terms: strip both to avoid logging personal data.
+			val reason = entity.error.message
+				?.substringBefore("\nJSON input:")
+				?.replace('\n', ' ')
+				?.trim()
+			val requestPath = entity.requestUrl.substringBefore('?')
+			println(
+				"MalformedEntity - Discarded ${entity.entityType} with id ${entity.entityId ?: "<unknown>"} " +
+						"returned by $requestPath: ${entity.error::class.simpleName}: $reason"
+			)
+		}
+	}
+
 	@Volatile
 	private var cache = emptyMap<String, Pair<CardinalSdk, RawApis>>()
 	private val cacheMutex = Mutex()
@@ -242,19 +263,7 @@ class CardinalSdkInitializer(
 				useHierarchicalDataOwners = true,
 				httpClient = client,
 				httpClientJson = json,
-				entityListDecodingStrategy = EntityListDecodingStrategy.DiscardMalformed { entity ->
-					// kotlinx.serialization messages may end with an excerpt of the raw json, and the query may contain
-					// search terms: strip both to avoid logging personal data.
-					val reason = entity.error.message
-						?.substringBefore("\nJSON input:")
-						?.replace('\n', ' ')
-						?.trim()
-					val requestPath = entity.requestUrl.substringBefore('?')
-					println(
-						"MalformedEntity - Discarded ${entity.entityType} with id ${entity.entityId ?: "<unknown>"} " +
-								"returned by $requestPath: ${entity.error::class.simpleName}: $reason"
-					)
-				}
+				entityListDecodingStrategy = entityListDecodingStrategy,
 			)
 		)
 }

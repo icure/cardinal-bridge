@@ -11,6 +11,7 @@ import com.icure.cardinal.bridge.config.configureSerialization
 import com.icure.cardinal.bridge.controllers.configureRouting
 import com.icure.cardinal.bridge.serialization.FilterSerializers
 import com.icure.cardinal.bridge.serialization.SerializationConfig
+import io.ktor.server.application.Application
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 
@@ -24,9 +25,7 @@ class ServerMain : CliktCommand() {
 			CIO,
 			port = port,
 			module = {
-				configureSerialization()
-				configureErrorHandler()
-				configureRouting(
+				bridgeModule(
 					CardinalSdkInitializer(
 						applicationId,
 						defaultBaseUrl
@@ -35,6 +34,12 @@ class ServerMain : CliktCommand() {
 			}
 		).start(wait = true)
 	}
+}
+
+fun Application.bridgeModule(sdkInitializer: CardinalSdkInitializer) {
+	configureSerialization()
+	configureErrorHandler()
+	configureRouting(sdkInitializer)
 }
 
 fun main(args: Array<String>) {

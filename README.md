@@ -29,6 +29,17 @@ in your IDE’s toolbar or run it directly from the terminal:
   .\gradlew.bat :server:run
   ```
 
+### Decode benchmark
+
+`DecodeStrategyBenchmarkTest` seeds a Kraken started with Testcontainers and measures the contact filter endpoints with
+both entity list decoding strategies of the Cardinal SDK. It needs Docker and access to `docker.taktik.be`, and only runs
+when asked:
+```shell
+BRIDGE_BENCH=1 ./gradlew :server:jvmTest
+```
+Results are written to `server/build/reports/bridge-bench.md`. See the kdoc of the test for the dataset and timeout
+options.
+
 ---
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
