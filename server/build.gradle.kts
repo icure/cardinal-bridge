@@ -45,6 +45,8 @@ getLocalProperties()["cinteropsLibsDir"]?.also { allDirs ->
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
+				// Aligns the ktor modules the cardinal sdk depends on with the ktor version of the project.
+				implementation(project.dependencies.platform(libs.ktor.bom))
 				implementation(libs.ktor.serverCore)
 				implementation(libs.ktor.serverCio)
 				implementation(libs.ktor.serverContentNegotiation)
@@ -64,6 +66,16 @@ getLocalProperties()["cinteropsLibsDir"]?.also { allDirs ->
 			}
 		}
 		applyDefaultHierarchyTemplate()
+		// The http client engines used by each platform.
+		jvmMain.dependencies {
+			implementation(libs.ktor.clientOkhttp)
+		}
+		appleMain.dependencies {
+			implementation(libs.ktor.clientDarwin)
+		}
+		linuxMain.dependencies {
+			implementation(libs.ktor.clientCurl)
+		}
 	}
 }
 
