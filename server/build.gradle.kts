@@ -100,3 +100,25 @@ tasks.named<Test>("jvmTest") {
 		outputs.upToDateWhen { false }
 	}
 }
+
+// The decode benchmark (DecodeStrategyBenchmarkTest) only runs with BRIDGE_BENCH=1, see its kdoc for the other options.
+val benchEnv = listOf(
+	"BRIDGE_BENCH",
+	"BRIDGE_BENCH_TIERS",
+	"BRIDGE_BENCH_TIMEOUT",
+	"BRIDGE_BENCH_KRAKEN_IMAGE",
+	"BRIDGE_BENCH_NATIVE_IMAGE",
+).associateWith { providers.environmentVariable(it).orElse("") }
+
+tasks.named<Test>("jvmTest") {
+	useJUnitPlatform()
+	maxHeapSize = providers.gradleProperty("benchHeap").getOrElse("1g")
+	jvmArgs("-XX:+EnableDynamicAgentLoading")
+	testLogging {
+		showStandardStreams = true
+	}
+	benchEnv.forEach { (name, value) -> inputs.property(name, value) }
+	if (benchEnv.getValue("BRIDGE_BENCH").get() == "1") {
+		outputs.upToDateWhen { false }
+	}
+}
