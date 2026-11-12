@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.icure.bridge"
-version = "0.0.7"
+version = "0.0.8"
 
 private fun Project.getLocalProperties() =
 	Properties().apply {
